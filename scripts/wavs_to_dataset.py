@@ -55,7 +55,8 @@ def main():
             wav = AudioSegment.from_wav(wav_path)
             for i, fragment in enumerate(parse_wav[filename]['emotions']):
                 segment = wav[fragment['start'] * 1000:fragment['end'] * 1000]
-                if segment.duration_seconds == 0. or segment.duration_seconds > 15.:
+                if segment.duration_seconds == 0.:
+                    print(f'Filename {filename} has 0 second of duration!')
                     pass
                 else:
                     new_filename = f'{filename.replace(".wav", "")}_{i}.wav'
