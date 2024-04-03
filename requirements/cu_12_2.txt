@@ -2,14 +2,14 @@
 jupyter==1.0.0
 pyarrow==15.0.0
 matplotlib==3.8.2
-gdown
-catboost
-seaborn
+gdown==5.0.0
+catboost==1.2.2
+seaborn==0.13.2
 
-torchaudio
+torchaudio==2.2.2
 librosa~=0.10.1
-pandas
-pydub
+pandas~=2.2.1
+pydub~=0.25.1
 numpy~=1.26.3
-lightning
-scikit-learn
+lightning~=2.2.1
+scikit-learn~=1.4.1.post1
