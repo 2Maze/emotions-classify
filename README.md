@@ -27,5 +27,5 @@ docker run --gpus all --ipc=host --ulimit memlock=-1 --ulimit stack=67108864  -p
 
 1. Run docker image
 ```bash
-docker run --gpus all --ipc=host --ulimit memlock=-1 --ulimit stack=67108864  -p 8888:8888 -it -v .:/workspace/NN  daniinxorchenabo/emotions-classify:cu_12_2 python <some_file>.py
+docker run --gpus all --ipc=host --ulimit memlock=-1 --ulimit stack=67108864  -it -docker start -ai .:/workspace/NN  daniinxorchenabo/emotions-classify:cu_12_2 python <some_file>.py
 ```
