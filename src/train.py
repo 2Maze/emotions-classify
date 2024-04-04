@@ -1,17 +1,26 @@
+from os.path import join, dirname, split
+import os
+from datetime import datetime
+
 import torch
 import torchmetrics
 import numpy as np
 import lightning as L
 import torch.nn.functional as F
 
-from src.utils.data import EmotionDataset
-from src.model import Wav2Vec2Classifier
+from config.constants import ROOT_DIR
+from utils.data import EmotionDataset
+from model import Wav2Vec2Classifier
 from torch.utils.data import DataLoader
 from torch.nn.utils.rnn import pad_sequence
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Subset
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.callbacks import LearningRateMonitor
+
+
+
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 
 
 class LitModule(L.LightningModule):
@@ -64,7 +73,7 @@ def collate_fn(items):
 
 
 def main():
-    dataset = EmotionDataset(annotation='data/dataset/annotations.json')
+    dataset = EmotionDataset(annotation= join(ROOT_DIR, 'data', 'dataset', 'annotations.json'), padding_sec=25)
 
     train_idx, val_idx = train_test_split(np.arange(len(dataset)),
                                           test_size=0.15,
@@ -74,22 +83,27 @@ def main():
     train_dataset = Subset(dataset, train_idx)
     val_dataset = Subset(dataset, val_idx)
 
-    train_dataloader = DataLoader(train_dataset, batch_size=10, shuffle=True, collate_fn=collate_fn)
-    val_dataloader = DataLoader(val_dataset, batch_size=10, shuffle=False, collate_fn=collate_fn)
+    train_dataloader = DataLoader(train_dataset, batch_size=10, shuffle=True, collate_fn=collate_fn, num_workers=15)
+    val_dataloader = DataLoader(val_dataset, batch_size=10, shuffle=False, collate_fn=collate_fn, num_workers=15)
+
+    print("classifier_" + datetime.now().strftime("%Y%m%d-%H%M%S") + "_{epoch:02d}")
 
     checkpoint_callback = ModelCheckpoint(
-        dirpath='checkpoints',
-        filename="classifier_{epoch:02d}",
+        dirpath= join(ROOT_DIR, "weights",  'checkpoints'),
+        filename="classifier_tt_{epoch:02d}",
         every_n_epochs=10,
         save_top_k=-1,
     )
+    # print(ModelCheckpoint.dirpath)
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
 
     model = LitModule(len(dataset.emotions))
     trainer = L.Trainer(accelerator='gpu',
                         devices=1,
-                        max_epochs=100,
-                        callbacks=[checkpoint_callback, lr_monitor])
+                        max_epochs=99,
+                        callbacks=[checkpoint_callback, lr_monitor],
+                        default_root_dir=join(ROOT_DIR, 'logs')
+                        )
     trainer.fit(model, train_dataloader, val_dataloader)
 
 
