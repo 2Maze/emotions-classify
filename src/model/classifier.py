@@ -1,12 +1,15 @@
+from os.path import join, dirname
+
 import torch.nn as nn
 import torchaudio
 
+from config.constants import ROOT_DIR
 
 class Wav2Vec2Classifier(nn.Module):
     def __init__(self, num_classes):
         super(Wav2Vec2Classifier, self).__init__()
         bundle = torchaudio.pipelines.WAV2VEC2_BASE
-        self.feature_extractor = bundle.get_model()
+        self.feature_extractor = bundle.get_model(dl_kwargs={"file_name": join(ROOT_DIR, "weights", "loaded_weights", "wav2vec2_fairseq_base_ls960.pth")})
         for param in self.feature_extractor.parameters():
             param.requires_grad = False
         self.classifier = nn.Sequential(
