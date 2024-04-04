@@ -11,8 +11,7 @@ RUN mkdir /workspace/NN
 COPY ./requirements/${REQUIREMENTS_FILE} /workspace
 RUN --mount=type=cache,target=/root/.cache/pip \
     cd /workspace  \
-    && pip install -r ${REQUIREMENTS_FILE} \
-    && pip install torchaudio
+    && pip install -r ${REQUIREMENTS_FILE}
 
 WORKDIR /workspace/NN
 CMD ["jupyter", "lab", "--allow-root", "--ip=0.0.0.0"]
