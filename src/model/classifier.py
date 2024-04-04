@@ -9,11 +9,13 @@ class Wav2Vec2Classifier(nn.Module):
         self.feature_extractor = bundle.get_model()
         for param in self.feature_extractor.parameters():
             param.requires_grad = False
-        self.classifier = nn.Sequential(nn.Linear(768, 1024, bias=True),
-        				nn.ReLU(inplace=True),
-        				nn.Linear(1024, 512, bias=True),
-        				nn.ReLU(inplace=True),
-        				nn.Linear(512, num_classes, bias=True))
+        self.classifier = nn.Sequential(
+            nn.Linear(768, 1024, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(1024, 512, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Linear(512, num_classes, bias=True)
+        )
 
     def forward(self, X):
         features = self.get_embeddings(X)
