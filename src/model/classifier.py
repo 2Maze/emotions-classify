@@ -12,10 +12,26 @@ from config.constants import ROOT_DIR,PADDING_SEC
 
 class Wav2Vec2Classifier(nn.Module):
 
-    def __init__(self, num_classes, padding_sec):
+    def __init__(
+            self,
+            num_classes,
+            padding_sec,
+            conv_h_count: int = 0,
+            conv_w_count: int = 0,
+            layer_1_size: int = 1024,
+            layer_2_size: int = 512,
+            config: dict | None = None,
+    ):
         super(Wav2Vec2Classifier, self).__init__()
         self.padding_sec = padding_sec
         self.padding_sec_w = 50 * padding_sec - 1
+
+        self.conv_h_count = conv_h_count
+        self.conv_w_count = conv_w_count
+        self.layer_1_size = layer_1_size
+        self.layer_2_size = layer_2_size
+        self.config = config
+
         # configuration = Wav2Vec2Config()
         self.embedding_model: Wav2Vec2ForCTC = AutoModelForCTC.from_pretrained(
             "Eyvaz/wav2vec2-base-russian-demo-kaggle",
@@ -33,19 +49,25 @@ class Wav2Vec2Classifier(nn.Module):
             self.embedding_model.wav2vec2.encoder.layer_norm,
         )
 
+        if (self.conv_h_count > 0):
+            self.feature_resizer1 = nn.Sequential(
+                OrderedDict([
+                    ("1d_conv", nn.Conv1d(self.padding_sec_w, self.conv_h_count, 1)),
+                    ("bath_after_1d_conv", nn.BatchNorm1d(  self.conv_h_count)),
+                    ("relu_after_1d_conv", nn.ReLU(inplace=True)),
+                ]))
+        else:
+            self.feature_resizer1 = nn.Sequential()
 
-        # self.feature_resizer1 = nn.Sequential(
-        #     OrderedDict([
-        #         ("1d_conv", nn.Conv1d(self.padding_sec_w, 1, 1)),
-        #         ("bath_after_1d_conv", nn.BatchNorm1d( 1)),
-        #         ("relu_after_1d_conv", nn.ReLU(inplace=True)),
-        #     ]))
-        self.feature_resizer2 = nn.Sequential(
-            OrderedDict([
-                ("1d_conv", nn.Conv1d(768, 1, 1)),
-                ("bath_after_1d_conv", nn.BatchNorm1d( 1)),
-                ("relu_after_1d_conv", nn.ReLU(inplace=True)),
-            ]))
+        if self.conv_w_count > 0:
+            self.feature_resizer2 = nn.Sequential(
+                OrderedDict([
+                    ("1d_conv", nn.Conv1d(768, self.conv_w_count, 1)),
+                    ("bath_after_1d_conv", nn.BatchNorm1d( self.conv_w_count)),
+                    ("relu_after_1d_conv", nn.ReLU(inplace=True)),
+                ]))
+        else:
+            self.feature_resizer2 = nn.Sequential()
 
 
         # bundle = torchaudio.pipelines.WAV2VEC2_BASE
@@ -63,25 +85,24 @@ class Wav2Vec2Classifier(nn.Module):
             param.requires_grad = False
         for param in  self.feature_post_projection.parameters():
             param.requires_grad = False
-        '''
-         weight of size [16, 499, 1, 1], expected input[1, 10, 499, 768] to have 499 channels, but got 10 channels instead
-         '''
-
-
 
         self.classifier = nn.Sequential(
-            nn.Linear(self.padding_sec_w * 0 + 768 * 1, 1 * 1024, bias=True),
-            nn.BatchNorm1d(1 * 1024),
+            nn.Linear(
+                self.padding_sec_w * (1 + self.conv_w_count)
+                + 768 * (1 + self.conv_h_count), 1 * self.layer_1_size,
+                bias=True
+            ),
+            nn.BatchNorm1d(1 * self.layer_1_size),
             nn.ReLU(inplace=True),
-            nn.Linear(1 * 1024, 512, bias=True),
+            nn.Linear(1 * self.layer_1_size, self.layer_2_size, bias=True),
             # nn.Linear(self.padding_sec_w * 4, 1 *  1024, bias=True),
             # nn.Linear(867 * 1, 1 * 1024, bias=True),
             # nn.BatchNorm1d(1 * 1024),
             # nn.ReLU(inplace=True),
             # nn.Linear(1 * 1024, 512, bias=True),
-            nn.BatchNorm1d(512),
+            nn.BatchNorm1d(self.layer_2_size),
             nn.ReLU(inplace=True),
-            nn.Linear(512, num_classes, bias=True)
+            nn.Linear(self.layer_2_size, num_classes, bias=True)
         )
         # print(self.classifier[0])
 
@@ -92,7 +113,15 @@ class Wav2Vec2Classifier(nn.Module):
             attention_mask: torch.Tensor | None = None,
     ):
         features = self.get_embeddings(X, mask_time_indices=mask_time_indices, attention_mask=attention_mask)
+        print("-----features", features.size(),
+              self.conv_h_count,
+            self.conv_w_count,
+            self.layer_1_size,
+            self.layer_2_size,
+            self.config,
+              )
         logits = self.classifier(features)
+        logits = torch.log_softmax(logits, dim=1)
         return logits
 
     def get_embeddings(
@@ -124,16 +153,26 @@ class Wav2Vec2Classifier(nn.Module):
 
         # hidden_states = self.feature_post_projection(hidden_states)
 
-        # resized_features1 = self.feature_resizer1(hidden_states.view(-1, self.padding_sec_w, 768))
-        # resized_features1 = resized_features1.view(-1, 768 * 1)
-        # resized_features2 = self.feature_resizer2(hidden_states.view(-1, 768, self.padding_sec_w))
-        # resized_features2 = resized_features2.view(-1, self.padding_sec_w * 1)
+        resize_tensors = []
+
+        if  self.conv_h_count > 0:
+            print(hidden_states.size())
+            resized_features1 = self.feature_resizer1(hidden_states.view(-1, self.padding_sec_w * 1, 768))
+            resized_features1 = resized_features1.view(-1, 768 * self.conv_h_count)
+            resize_tensors.append(resized_features1)
+        if self.conv_w_count > 0:
+            print(hidden_states.size())
+            resized_features2 = self.feature_resizer2(hidden_states.view(-1, 768 * 1, self.padding_sec_w))
+            resized_features2 = resized_features2.view(-1, self.padding_sec_w * self.conv_w_count)
+            resize_tensors.append(resized_features2)
+
         # resized_features = torch.cat((resized_features1, resized_features2), 1)
 
         # resized_features = resized_features2
-        resized_features = hidden_states.mean(axis=1)
+        # resized_features = hidden_states.mean(axis=1)
+        resized_features = torch.cat((hidden_states.mean(axis=1), hidden_states.mean(axis=2), *resize_tensors), 1)
         resized_features = nn.functional.normalize(resized_features)
-        # resized_features = torch.cat((hidden_states.mean(axis=1), hidden_states.mean(axis=2)), 1)
+        #
 
         # print("resized_features", hidden_states.size(), resized_features.size())
 
