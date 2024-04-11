@@ -1,6 +1,7 @@
 from os.path import join, dirname
 from collections import OrderedDict
 
+
 import torch
 import torch.nn as nn
 import torchaudio
@@ -113,13 +114,13 @@ class Wav2Vec2Classifier(nn.Module):
             attention_mask: torch.Tensor | None = None,
     ):
         features = self.get_embeddings(X, mask_time_indices=mask_time_indices, attention_mask=attention_mask)
-        print("-----features", features.size(),
-              self.conv_h_count,
-            self.conv_w_count,
-            self.layer_1_size,
-            self.layer_2_size,
-            self.config,
-              )
+        # print("-----features", features.size(),
+        #       self.conv_h_count,
+        #     self.conv_w_count,
+        #     self.layer_1_size,
+        #     self.layer_2_size,
+        #     self.config,
+        #       )
         logits = self.classifier(features)
         logits = torch.log_softmax(logits, dim=1)
         return logits
@@ -156,12 +157,12 @@ class Wav2Vec2Classifier(nn.Module):
         resize_tensors = []
 
         if  self.conv_h_count > 0:
-            print(hidden_states.size())
+            # print(hidden_states.size())
             resized_features1 = self.feature_resizer1(hidden_states.view(-1, self.padding_sec_w * 1, 768))
             resized_features1 = resized_features1.view(-1, 768 * self.conv_h_count)
             resize_tensors.append(resized_features1)
         if self.conv_w_count > 0:
-            print(hidden_states.size())
+            # print(hidden_states.size())
             resized_features2 = self.feature_resizer2(hidden_states.view(-1, 768 * 1, self.padding_sec_w))
             resized_features2 = resized_features2.view(-1, self.padding_sec_w * self.conv_w_count)
             resize_tensors.append(resized_features2)

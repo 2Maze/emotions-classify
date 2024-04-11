@@ -1,7 +1,11 @@
+import json
 from os.path import join, dirname, split
 import os
 from datetime import datetime
 from pprint import pprint
+import shutil
+import traceback
+
 
 import torch
 import torchmetrics
@@ -22,6 +26,7 @@ from config.constants import ROOT_DIR, PADDING_SEC
 from utils.data import EmotionDataset
 from model import Wav2Vec2Classifier
 # from ray import tune
+import ray
 from ray.air import session
 from ray.tune.schedulers import ASHAScheduler
 from ray import tune
@@ -33,6 +38,9 @@ from ray.train.lightning import (
     RayTrainReportCallback,
     prepare_trainer,
 )
+from ray import air, tune
+from ray.tune.callback import Callback
+from ray.tune.experiment.trial import Trial
 
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 os.environ["RAY_AIR_NEW_PERSISTENCE_MODE"] = "0"
@@ -182,7 +190,9 @@ class LitModule(L.LightningModule):
 
         scheduler = torch.optim.lr_scheduler.MultiStepLR(
             optimizer,
-            milestones=[i * 2 for i in [15, 35, 55, 80, 100, 120, 140, 160, 180, 200, 220]],
+            # milestones=[i * 2 for i in [15, 35, 55, 80, 100, 120, 140, 160, 180, 200, 220]],
+            milestones=[i for i in [100, 200, 300, 450]],
+
             gamma=(1. / 3.)
         )
         return [optimizer], [scheduler]
@@ -256,13 +266,13 @@ def load_data(bath_size=10, validation_bath_size=None, num_workers=1):
 
     return train_dataloader, val_dataloader, dataset
 
-"""
-    metrics={'lr-Adam': 0.00201558624394238, 'train/loss': 0.036369334906339645, 'val/acc': 0.7272727489471436, 'val/f1': 0.7272727489471436, 'val/mean_loss': 1.044744849205017, 'epoch': 9, 'step': 640},
-2024-04-08T19:26:51.546840124Z     path='/root/ray_results/TorchTrainer_2024-04-08_19-19-14/TorchTrainer_e4be6_00001_1_batch_size=8,conv_h_count=0,conv_w_count=8,layer_1_size=1024,layer_2_size=256,lr=0.0020_2024-04-08_19-19-17',
- 
-"""
 
-def train_func(config):
+def train_func(config, strategy='auto', callbacks: list | None = None, plugins: list | None = None, trainer_modif=None):
+    # tune.utils.wait_for_gpu()
+    # torch.cuda.empty_cache()
+    # tune.utils.wait_for_gpu()
+    callbacks = callbacks or []
+    plugins = plugins or []
     train_dataloader, val_dataloader, dataset = load_data(
         bath_size=config["batch_size"],
         num_workers=config["num_workers"]
@@ -271,8 +281,11 @@ def train_func(config):
     checkpoint_callback = ModelCheckpoint(
         dirpath=join(ROOT_DIR, "weights", 'checkpoints', datetime.now().strftime("%Y%m%d-%H%M%S")),
         filename="classifier_" + datetime.now().strftime("%Y%m%d-%H%M%S") + "_{epoch:02d}",
-        every_n_epochs=10,
-        save_top_k=-1,
+        monitor="val/acc",
+        mode='max',  # 'min' if the metric should be minimized (e.g., loss), 'max' for maximization (e.g., accuracy)
+        # every_n_epochs=30,
+        save_top_k=2,  # Save top k checkpoints based on the monitored metric
+        save_last=True,  # Save the last checkpoint at the end of training
     )
     # print(ModelCheckpoint.dirpath)
 
@@ -287,7 +300,7 @@ def train_func(config):
         layer_2_size=config["layer_2_size"],
     )
 
-    checkpoint = session.get_checkpoint()
+    # checkpoint = session.get_checkpoint()
 
     # if checkpoint:
     #     checkpoint_state = checkpoint.to_dict()
@@ -297,33 +310,169 @@ def train_func(config):
     # else:
     #     start_epoch = 0
 
-    device = "cpu"
-    if torch.cuda.is_available():
-        device = "cuda:0"
-        if torch.cuda.device_count() > 1:
-            model = nn.DataParallel(model)
-    model.to(device)
+    # device = "cpu"
+    # if torch.cuda.is_available():
+    #     device = "cuda:0"
+    #     if torch.cuda.device_count() > 1:
+    #         model = nn.DataParallel(model)
+    # model.to(device)
 
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
     trainer = L.Trainer(accelerator='gpu',
                         devices=1,
-                        max_epochs=300,
-                        strategy=RayDDPStrategy(find_unused_parameters=True),
+                        max_epochs=600,
+                        strategy=strategy,
+                        # strategy=RayDDPStrategy(find_unused_parameters=True),
                         callbacks=[
                             checkpoint_callback,
                             lr_monitor,
-                            RayTrainReportCallback()
+                            *callbacks
+                            # RayTrainReportCallback()
                         ],
-                        plugins=[RayLightningEnvironment()],
+                        plugins=plugins,
+                        # plugins=[RayLightningEnvironment()],
                         default_root_dir=join(ROOT_DIR, 'logs')
                         )
-    trainer = prepare_trainer(trainer)
-    trainer.fit(model, train_dataloader, val_dataloader)
+    if trainer_modif:
+        trainer = trainer_modif(trainer)
+    return trainer.fit(model, train_dataloader, val_dataloader)
 
 
-def tune_asha(ray_trainer, search_space, num_samples=10, num_epochs=5):
+# def tune_asha(ray_trainer, search_space, num_samples=10, num_epochs=5):
+#
+#     return
+
+def tune_wapper_of_train_func(config):
+    torch.cuda.empty_cache()
+    tune.utils.wait_for_gpu()
+    try:
+        result = train_func(
+            config,
+            strategy=RayDDPStrategy(find_unused_parameters=True),
+            callbacks=[RayTrainReportCallback()],
+            plugins=[RayLightningEnvironment()],
+            trainer_modif=prepare_trainer,
+        )
+    except Exception as e:
+        print("some error win train")
+        torch.cuda.empty_cache()
+        tune.utils.wait_for_gpu()
+        raise e from e
+
+
+class DeleteCallback(Callback):
+
+    @staticmethod
+    def get_train_num_from_dir(path):
+        return int(split(join("some", path))[1].split('_')[3].strip())
+
+    def on_trial_complete(
+            self, iteration: int, trials: list[Trial], trial: Trial, **info,
+    ):
+        last_result = trial.last_result
+        # Filter out which checkpoints to delete on trial completion
+        print("___deleting checkpoint", last_result, trial, trial.path, trial.local_path)
+        if True and last_result["val/acc"] < 0.75:
+            try:
+                tune_root_dir, curr_dir = split(trial.path)
+                curr_tune_num = self.get_train_num_from_dir(trial.path)
+                all_delete_dirs = [
+                    (i, directory, checkpoint_dir)
+                    for (i, directory, checkpoint_dir) in (
+                        (i, directory, j)
+                        for (i, directory) in (
+                        (self.get_train_num_from_dir(join(tune_root_dir, f)), join(tune_root_dir, f))
+                        for f in os.listdir(tune_root_dir)
+                        if os.path.isdir(join(tune_root_dir, f))
+                    ) if 0 < curr_tune_num - i < 10
+                        for j in os.listdir(directory)
+                        if j.startswith('checkpoint_')
+                    )]
+                # print(all_delete_dirs, curr_tune_num)
+                # print([join(tune_root_dir, f) for f in os.listdir(tune_root_dir)
+                #        if os.path.isdir(join(tune_root_dir, f))], tune_root_dir, os.listdir(tune_root_dir))
+                # print("&&&&---", [
+                #     (i, directory, checkpoint_dir)
+                #     for (i, directory, checkpoint_dir) in (
+                #         (i, directory, j)
+                #         for (i, directory) in (
+                #         (self.get_train_num_from_dir(join(tune_root_dir, f)), join(tune_root_dir, f))
+                #         for f in os.listdir(tune_root_dir)
+                #         if os.path.isdir(join(tune_root_dir, f))
+                #     ) if 0 < curr_tune_num - i < 10)
+                #
+                # ])
+
+                print(all_delete_dirs)
+                checkpoint_path = join(trial.path, last_result["checkpoint_dir_name"])
+                for (_, one_tune_iteration_dir, checkpoint_dir) in all_delete_dirs:
+                    results_dir = join(one_tune_iteration_dir, "result.json")
+                    with open(results_dir, "r") as f:
+                        results = [i['checkpoint_dir_name'] for i in (json.loads(i) for i in f.readlines()) if
+                                   i['val/acc'] > 0.75]
+                    print("one_tune_iteration_dir", one_tune_iteration_dir, checkpoint_dir, split(checkpoint_dir)[1], last_result["val/acc"])
+                    if split(checkpoint_dir)[1] not in results:
+                        print("deleting", join(one_tune_iteration_dir, checkpoint_dir))
+                        shutil.rmtree(join(one_tune_iteration_dir, checkpoint_dir))
+
+                # checkpoint: _TrackedCheckpoint = trial.checkpoint
+                # checkpoint.delete()
+            except Exception as exp:
+                print(f"Unable to delete checkpoint of {trial}", exp, "\n", traceback.format_exc())
+
+
+def start_tuning():
+    storage_path = join(ROOT_DIR, 'tmp', 'tune')
+    exp_name = "tune_analyzing_results_" + datetime.now().strftime("%Y%m%d-%H%M%S")
+    # exp_name = "tune_analyzing_results_20240410-090935"
+    search_space = {
+        "layer_1_size": tune.choice([32, 64, 128, 256, 512, 1024, 2048]),
+        "layer_2_size": tune.choice([32, 64, 128, 256, 512, 1024, 2048]),
+        "lr": tune.loguniform(1e-4, 1e-1),
+        "batch_size": tune.choice([2, 4, 8, 16, 32, 64]),
+        "conv_h_count": tune.choice([0, 1, 2, 4, 8, 16]),
+        "conv_w_count": tune.choice([0, 1, 2, 4, 8, 16]),
+        "num_workers": 1
+    }
+    # The maximum training epochs
+    num_epochs = 5
+    # Number of sampls from parameter space
+    num_samples = 500
+    # scheduler = ASHAScheduler(max_t=num_epochs, grace_period=1, reduction_factor=2)
+
+    scaling_config = ScalingConfig(
+        num_workers=1,
+        use_gpu=True,
+        resources_per_worker={"CPU": 1, "GPU": 1}
+    )
+
+    run_config = RunConfig(
+        name=exp_name,
+        checkpoint_config=CheckpointConfig(
+            num_to_keep=1,
+            checkpoint_score_attribute="val/acc",
+            checkpoint_score_order="max",
+        ),
+        storage_path=storage_path,
+        callbacks=[DeleteCallback()],
+    )
+
+    # Define a TorchTrainer without hyper-parameters for Tuner
+    ray_trainer = TorchTrainer(
+        tune_wapper_of_train_func,
+        scaling_config=scaling_config,
+        run_config=run_config,
+    )
+
+    # results = tune_asha(
+    #     ray_trainer,
+    #     search_space,
+    #     num_samples=num_samples,
+    #     num_epochs=num_epochs
+    # )
     scheduler = ASHAScheduler(max_t=num_epochs, grace_period=1, reduction_factor=2)
 
+    # ray.init(_temp_dir=join(ROOT_DIR, 'tmp', "ray", "session"))
     tuner = tune.Tuner(
         ray_trainer,
         param_space={"train_loop_config": search_space},
@@ -334,52 +483,39 @@ def tune_asha(ray_trainer, search_space, num_samples=10, num_epochs=5):
             scheduler=scheduler,
         ),
     )
-    return tuner.fit()
+    results = tuner.fit()
+    print(results)
+
+
+# def train_model_with_config(config):
 
 
 def main():
-    search_space = {
-        "layer_1_size": tune.choice([32, 64, 128, 256, 512, 1024, 2048]),
-        "layer_2_size": tune.choice([32, 64, 128, 256, 512, 1024, 2048]),
-        "lr": tune.loguniform(1e-4, 1e-1),
-        "batch_size": tune.choice([2, 4, 8, 16, 32, 64]),
-        "conv_h_count": tune.choice([0, 1, 2, 4, 8,  16]),
-        "conv_w_count": tune.choice([0, 1, 2, 4, 8, 16]),
-        "num_workers": 15
-    }
-    # The maximum training epochs
-    num_epochs = 10
-    # Number of sampls from parameter space
-    num_samples = 500
-    # scheduler = ASHAScheduler(max_t=num_epochs, grace_period=1, reduction_factor=2)
-
-    scaling_config = ScalingConfig(
-        num_workers=1, use_gpu=True, resources_per_worker={"CPU": 1, "GPU": 1}
-    )
-
-    run_config = RunConfig(
-        checkpoint_config=CheckpointConfig(
-            num_to_keep=2,
-            checkpoint_score_attribute="val/acc",
-            checkpoint_score_order="max",
-        ),
-    )
-
-    # Define a TorchTrainer without hyper-parameters for Tuner
-    ray_trainer = TorchTrainer(
-        train_func,
-        scaling_config=scaling_config,
-        run_config=run_config,
-    )
-
-    results = tune_asha(
-        ray_trainer,
-        search_space,
-        num_samples=num_samples,
-        num_epochs=num_epochs
-    )
-    print(results)
+    start_tuning()  # запустить тюнинг
+    # train_func(
+    #     # {
+    #     #     'batch_size': 16,
+    #     #     'conv_h_count': 8,
+    #     #     'conv_w_count': 0,
+    #     #     'layer_1_size': 512,
+    #     #     'layer_2_size': 256,
+    #     #     'lr': 0.0035923573027211784,
+    #     #     'num_workers': 1
+    #     # }
+    #     {'batch_size': 8, 'conv_h_count': 2, 'conv_w_count': 0,
+    #      'layer_1_size': 1024, 'layer_2_size': 1024,
+    #      'lr': 0.006854079146121017, 'num_workers': 1}
+    # )
 
 
 if __name__ == '__main__':
     main()
+
+'''
+(0.8125, {'train_loop_config': {'batch_size': 16, 'conv_h_count': 8, 'conv_w_count': 0, 'layer_1_size': 512, 'layer_2_size': 256, 'lr': 0.0035923573027211784, 'num_workers': 1}})
+(0.7954545617103577, {'train_loop_config': {'batch_size': 8, 'conv_h_count': 2, 'conv_w_count': 0, 'layer_1_size': 1024, 'layer_2_size': 1024, 'lr': 0.006854079146121017, 'num_workers': 1}})
+(0.7954545617103577, {'train_loop_config': {'batch_size': 8, 'conv_h_count': 0, 'conv_w_count': 0, 'layer_1_size': 2048, 'layer_2_size': 256, 'lr': 0.00012928256749833867, 'num_workers': 1}})
+(0.7727272510528564, {'train_loop_config': {'batch_size': 8, 'conv_h_count': 4, 'conv_w_count': 0, 'layer_1_size': 1024, 'layer_2_size': 1024, 'lr': 0.003983555045340102, 'num_workers': 1}})
+(0.7613636255264282, {'train_loop_config': {'batch_size': 4, 'conv_h_count': 8, 'conv_w_count': 2, 'layer_1_size': 1024, 'layer_2_size': 64, 'lr': 0.0007337747082560383, 'num_workers': 1}})
+(0.7272727489471436, {'train_loop_config': {'batch_size': 4, 'conv_h_count': 16, 'conv_w_count': 0, 'layer_1_size': 256, 'layer_2_size': 128, 'lr': 0.0013735981461098664, 'num_workers': 1}})
+'''

@@ -4,3 +4,4 @@
 /data/**/*
 /logs/**/*
 /weights/**/*
+/tmp/**/*
