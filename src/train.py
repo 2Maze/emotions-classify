@@ -6,7 +6,7 @@ from pprint import pprint
 import shutil
 import traceback
 
-
+import pytorch_lightning as pl
 import torch
 import torchmetrics
 import numpy as np
@@ -22,9 +22,7 @@ from torch.utils.data import Subset
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.callbacks import LearningRateMonitor
 
-from config.constants import ROOT_DIR, PADDING_SEC
-from utils.data import EmotionDataset
-from model import Wav2Vec2Classifier
+
 # from ray import tune
 import ray
 from ray.air import session
@@ -41,6 +39,17 @@ from ray.train.lightning import (
 from ray import air, tune
 from ray.tune.callback import Callback
 from ray.tune.experiment.trial import Trial
+from torchmetrics.classification import MulticlassConfusionMatrix
+# import seaborn as sn
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+from config.constants import ROOT_DIR, PADDING_SEC
+from utils.data import EmotionDataset
+from model import Wav2Vec2Classifier
+from metrics.confusion_matrix import CreateConfMatrix
 
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 os.environ["RAY_AIR_NEW_PERSISTENCE_MODE"] = "0"
@@ -117,6 +126,7 @@ class LitModule(L.LightningModule):
             h_mean_enable: bool = True,
             w_mean_enable: bool = True,
             config: dict | None = None,
+            lables: list[str] = None
     ):
         super().__init__()
         self.model = Wav2Vec2Classifier(
@@ -129,13 +139,20 @@ class LitModule(L.LightningModule):
             config=config
         )
         self.config = config
+        self.num_classes = num_classes
 
         self.lr = learning_rate
         self.conv_lr = conv_learning_rate
 
         self.val_loss = []
+        self.val_pred = []
+        self.val_y_true = []
+        self.train_y_pred = []
+        self.train_y_true = []
         self.acc = torchmetrics.classification.Accuracy(task='multiclass', num_classes=num_classes)
         self.f1 = torchmetrics.classification.F1Score(task='multiclass', num_classes=num_classes)
+        self.confusion_matrix = CreateConfMatrix(num_classes, lables, self.logger)
+        # self.writer = SummaryWriter('runs/fashion_mnist')
 
     def forward(self, x):
         return self.model(x)
@@ -144,19 +161,47 @@ class LitModule(L.LightningModule):
         outputs = self.forward(batch['array'])
         loss = F.cross_entropy(outputs, batch['emotion'])
         self.log('train/loss', loss, on_step=True, on_epoch=False)
+
+        self.train_y_pred.append(outputs)
+        self.train_y_true.append(batch['emotion'])
+
         return loss
+
+    def on_train_epoch_end(self):
+        preds = torch.cat( [i for i in self.train_y_pred])
+        targets = torch.cat([i for i in self.train_y_true])
+        self.confusion_matrix.draw_confusion_matrix(preds, targets, self.current_epoch, self.logger, "train/Confusion matrix")
+
+        self.train_y_pred = []
+        self.train_y_true = []
 
     def validation_step(self, batch, batch_idx):
         outputs = self.forward(batch['array'])
+        # print("---outputs", outputs.size(), outputs.max(dim=1), batch['emotion'])
         loss = F.cross_entropy(outputs, batch['emotion'])
         self.val_loss.append(loss.item())
+        self.val_pred.append(outputs)
+        self.val_y_true.append(batch['emotion'])
+
+
         self.log('val/acc', self.acc(outputs, batch['emotion']), on_step=False, on_epoch=True)
         self.log('val/f1', self.f1(outputs, batch['emotion']), on_step=False, on_epoch=True)
         self.log('val/loss', loss, on_step=True, on_epoch=False)
+        return { 'loss': loss, 'preds': outputs, 'target': batch['emotion']}
+
 
     def on_validation_epoch_end(self):
         self.log('val/mean_loss', np.array(self.val_loss).mean())
         self.val_loss = []
+
+        preds = torch.cat( [i for i in self.val_pred])
+        targets = torch.cat([i for i in self.val_y_true])
+        self.confusion_matrix.draw_confusion_matrix(preds, targets, self.current_epoch, self.logger, "val/Confusion matrix")
+        self.val_pred = []
+        self.val_y_true = []
+
+
+
 
     def configure_optimizers(self):
         # pprint([dict(i) for i in list(self.parameters())])
@@ -298,6 +343,7 @@ def train_func(config, strategy='auto', callbacks: list | None = None, plugins: 
         padding_sec=PADDING_SEC,
         layer_1_size=config["layer_1_size"],
         layer_2_size=config["layer_2_size"],
+        lables=dataset.emotions,
     )
 
     # checkpoint = session.get_checkpoint()
@@ -491,21 +537,21 @@ def start_tuning():
 
 
 def main():
-    start_tuning()  # запустить тюнинг
-    # train_func(
-    #     # {
-    #     #     'batch_size': 16,
-    #     #     'conv_h_count': 8,
-    #     #     'conv_w_count': 0,
-    #     #     'layer_1_size': 512,
-    #     #     'layer_2_size': 256,
-    #     #     'lr': 0.0035923573027211784,
-    #     #     'num_workers': 1
-    #     # }
-    #     {'batch_size': 8, 'conv_h_count': 2, 'conv_w_count': 0,
-    #      'layer_1_size': 1024, 'layer_2_size': 1024,
-    #      'lr': 0.006854079146121017, 'num_workers': 1}
-    # )
+    # start_tuning()  # запустить тюнинг
+    train_func(
+        {
+            'batch_size': 16,
+            'conv_h_count': 8,
+            'conv_w_count': 0,
+            'layer_1_size': 512,
+            'layer_2_size': 256,
+            'lr': 0.0035923573027211784,
+            'num_workers': 1
+        }
+        # {'batch_size': 8, 'conv_h_count': 2, 'conv_w_count': 0,
+        #  'layer_1_size': 1024, 'layer_2_size': 1024,
+        #  'lr': 0.006854079146121017, 'num_workers': 1}
+    )
 
 
 if __name__ == '__main__':

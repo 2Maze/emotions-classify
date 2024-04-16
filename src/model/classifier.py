@@ -122,7 +122,7 @@ class Wav2Vec2Classifier(nn.Module):
         #     self.config,
         #       )
         logits = self.classifier(features)
-        logits = torch.log_softmax(logits, dim=1)
+        logits = torch.softmax(logits, dim=1)
         return logits
 
     def get_embeddings(
