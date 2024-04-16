@@ -152,7 +152,6 @@ class LitModule(L.LightningModule):
         self.acc = torchmetrics.classification.Accuracy(task='multiclass', num_classes=num_classes)
         self.f1 = torchmetrics.classification.F1Score(task='multiclass', num_classes=num_classes)
         self.confusion_matrix = CreateConfMatrix(num_classes, lables, self.logger)
-        # self.writer = SummaryWriter('runs/fashion_mnist')
 
     def forward(self, x):
         return self.model(x)
@@ -204,40 +203,17 @@ class LitModule(L.LightningModule):
 
 
     def configure_optimizers(self):
-        # pprint([dict(i) for i in list(self.parameters())])
-        # print(list(list(list(self.children())[0].children())[3].children()), sep = "\n\n")
-
-        # print(self.getParameters(self))
-
-        # params, target_params = self.get_recourcive_params(self, [0, 3, 0])
         all_params = list(self.parameters())
-        # all_params = list(set(self.parameters()) - set(target_params['params']))
-        # all_params = self.parameters()
-        # print(params)
-        # optimizer = torch.optim.Adam(params, lr=1e-4)
 
         optimizer = torch.optim.Adam([
             {"params": all_params},
-            # target_params,
         ],
             lr=self.lr
         )
 
-        # optimizer2 = torch.optim.Adam([
-        #     target_params,
-        #
-        # ], lr=1e-2)
-
-        # optimizer.add_param_group({'params': self.model.feature_resizer.parameters(), "lr": 1e-5})
-        # print(len( optimizer.param_groups))
-        # for g in optimizer.param_groups:
-        #     print("--", g)
-
         scheduler = torch.optim.lr_scheduler.MultiStepLR(
             optimizer,
-            # milestones=[i * 2 for i in [15, 35, 55, 80, 100, 120, 140, 160, 180, 200, 220]],
             milestones=[i for i in [100, 200, 300, 450]],
-
             gamma=(1. / 3.)
         )
         return [optimizer], [scheduler]
@@ -245,14 +221,9 @@ class LitModule(L.LightningModule):
     @staticmethod
     def getParameters(model, rec=None):
         rec = rec or []
-        # getWidthConv2D = lambda layer: layer.out_channels
         parameters = []
-        # print(list(list(model.children())[0].children()), sep = "\n\n")
         for index, layer in enumerate(model.children()):
             paramdict = {'params': layer.parameters(), "_name": '_'.join(map(str, rec[:] + [index]))}
-            # if (isinstance(layer, nn.Conv2d)):
-            #     print(paramdict)
-            #     paramdict['lr'] = getWidthConv2D(layer) * 0.1 # Specify learning rate for Conv2D here
             parameters.append(paramdict)
         return parameters
 
@@ -263,18 +234,14 @@ class LitModule(L.LightningModule):
         last_i = 0
         target_params = None
         for index, i in enumerate([] + recourcive_map):
-            # print(i, len(list(next_model.children())))
             nested_params = cls.getParameters(next_model, recourcive_map[:index])
-            # print(params[:last_i], params[last_i+1:])
             params = params[:last_i] + nested_params + params[last_i + 1:]
             if index == len(recourcive_map) - 1:
                 nested_params[i] |= {"lr": 1e-4}
                 target_params = nested_params[i]
-                # print(next_model, nested_params)
             else:
                 next_model = list(next_model.children())[i]
             last_i = i
-        # print("\n----", *[i| {"params": id(i["params"])} for i in params], sep='\n')
         return params, target_params
 
 
