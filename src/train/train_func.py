@@ -13,7 +13,6 @@ from src.train.lighting_model import LitModule
 
 
 def train_func(config, tuning=False):
-
     train_dataloader, val_dataloader, dataset = load_data(
         bath_size=config["batch_size"],
         num_workers=config["num_workers"]
@@ -35,7 +34,7 @@ def train_func(config, tuning=False):
               )))
     # print(ModelCheckpoint.dirpath)
 
-    lit_model_params =  dict(
+    lit_model_params = dict(
         num_classes=len(dataset.emotions),
         learning_rate=config["lr"],
         conv_learning_rate=1e-3,
@@ -46,12 +45,12 @@ def train_func(config, tuning=False):
         # layer_1_size=config["layer_1_size"],
         # layer_2_size=config["layer_2_size"],
         lables=dataset.emotions,
-                                    dataset=dataset,
-                                    gamma=config["gamma"],
-    config=config,
-                                    )
+        dataset=dataset,
+        gamma=config["gamma"],
+        config=config,
+    )
     model = LitModule(
-**lit_model_params
+        **lit_model_params
     )
 
     # path = join(ROOT_DIR, "weights", "checkpoints", "20240416-220411", "")

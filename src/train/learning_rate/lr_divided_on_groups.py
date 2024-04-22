@@ -1,5 +1,3 @@
-
-
 def group_wise_lr(model, group_lr_conf: dict, path=""):
     """
     Refer https://pytorch.org/docs/master/optim.html#per-parameter-options
@@ -55,4 +53,3 @@ def group_wise_lr(model, group_lr_conf: dict, path=""):
         for c in confs:
             c["params"] = (n for n in c["params"])
     return confs, nms
-

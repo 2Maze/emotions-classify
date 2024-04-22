@@ -9,7 +9,6 @@ from src.config.constants import ROOT_DIR, PADDING_SEC
 from src.data_controller.emotion_dataset import EmotionDataset
 
 
-
 def collate_fn(items):
     output = {key: [] for key in list(items[0].keys())}
     for item in items:

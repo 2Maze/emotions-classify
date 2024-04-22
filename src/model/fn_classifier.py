@@ -1,7 +1,6 @@
 from os.path import join, dirname
 from collections import OrderedDict
 
-
 import torch
 import torch.nn as nn
 import torchaudio
@@ -9,7 +8,7 @@ from transformers import AutoProcessor, AutoModelForCTC
 from transformers.models.wav2vec2.modeling_wav2vec2 import Wav2Vec2Model, Wav2Vec2ForCTC
 from transformers import Wav2Vec2Model, Wav2Vec2Config
 
-from config.constants import ROOT_DIR,PADDING_SEC
+from config.constants import ROOT_DIR, PADDING_SEC
 
 
 class Wav2Vec2Classifier(nn.Module):
@@ -43,7 +42,7 @@ class Wav2Vec2Classifier(nn.Module):
         processor = AutoProcessor.from_pretrained(
             "Eyvaz/wav2vec2-base-russian-demo-kaggle",
             cache_dir=join(ROOT_DIR, "weights", "loaded_weights", ),
-         )
+        )
         self.feature_extractor = self.embedding_model.wav2vec2.feature_extractor
         self.feature_projection = self.embedding_model.wav2vec2.feature_projection
         self.feature_post_projection = nn.Sequential(
@@ -55,7 +54,7 @@ class Wav2Vec2Classifier(nn.Module):
             self.feature_resizer1 = nn.Sequential(
                 OrderedDict([
                     ("1d_conv", nn.Conv1d(self.padding_sec_w, self.conv_h_count, 1)),
-                    ("bath_after_1d_conv", nn.BatchNorm1d(  self.conv_h_count)),
+                    ("bath_after_1d_conv", nn.BatchNorm1d(self.conv_h_count)),
                     ("relu_after_1d_conv", nn.ReLU(inplace=True)),
                 ]))
         else:
@@ -65,12 +64,11 @@ class Wav2Vec2Classifier(nn.Module):
             self.feature_resizer2 = nn.Sequential(
                 OrderedDict([
                     ("1d_conv", nn.Conv1d(512, self.conv_w_count, 1)),
-                    ("bath_after_1d_conv", nn.BatchNorm1d( self.conv_w_count)),
+                    ("bath_after_1d_conv", nn.BatchNorm1d(self.conv_w_count)),
                     ("relu_after_1d_conv", nn.ReLU(inplace=True)),
                 ]))
         else:
             self.feature_resizer2 = nn.Sequential()
-
 
         # bundle = torchaudio.pipelines.WAV2VEC2_BASE
         # self.feature_extractor = bundle.get_model(
@@ -78,8 +76,6 @@ class Wav2Vec2Classifier(nn.Module):
         #         "file_name": join(ROOT_DIR, "weights", "loaded_weights", "wav2vec2_fairseq_base_ls960.pth")
         #     }
         # )
-
-
 
         # for param in self.feature_extractor.parameters():
         #     param.requires_grad = False
@@ -159,7 +155,7 @@ class Wav2Vec2Classifier(nn.Module):
 
         resize_tensors = []
 
-        if  self.conv_h_count > 0:
+        if self.conv_h_count > 0:
             # print(hidden_states.size())
             resized_features1 = self.feature_resizer1(hidden_states.view(-1, self.padding_sec_w * 1, 512))
             resized_features1 = resized_features1.view(-1, 512 * self.conv_h_count)

@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import traceback
@@ -50,4 +51,3 @@ class DeleteCallback(Callback):
                         shutil.rmtree(join(one_tune_iteration_dir, checkpoint_dir))
             except Exception as exp:
                 print(f"Unable to delete checkpoint of {trial}", exp, "\n", traceback.format_exc())
-

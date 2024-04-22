@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class FocalLoss(torch.nn.Module):
-    def __init__(self, gamma=2, dataset=None, device='cpu'   ):
+    def __init__(self, gamma=2, dataset=None, device='cpu'):
         super(FocalLoss, self).__init__()
         self.device = device
         assert bool(dataset)

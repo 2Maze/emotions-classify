@@ -11,6 +11,7 @@ from transformers import Wav2Vec2Model, Wav2Vec2Config
 
 from config.constants import ROOT_DIR, PADDING_SEC
 
+
 class Wav2Vec2CnnClassifier(nn.Module):
 
     def __init__(
@@ -35,19 +36,16 @@ class Wav2Vec2CnnClassifier(nn.Module):
         processor = AutoProcessor.from_pretrained(
             "Eyvaz/wav2vec2-base-russian-demo-kaggle",
             cache_dir=join(ROOT_DIR, "weights", "loaded_weights", ),
-         )
+        )
 
         self.efficientnet_model = models.efficientnet_b0(weights=False)
 
-
         self.efficientnet_model.features[0][0] = nn.Conv2d(1, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1),
-                                                      bias=False)
+                                                           bias=False)
         self.efficientnet_model.classifier[-1] = nn.Linear(in_features=1280, out_features=num_classes, bias=True)
-
 
         for param in self.embedding_model.wav2vec2.parameters():
             param.requires_grad = False
-
 
         self.classifier = self.efficientnet_model
 
@@ -68,6 +66,5 @@ class Wav2Vec2CnnClassifier(nn.Module):
             mask_time_indices: torch.FloatTensor | None = None,
             attention_mask: torch.Tensor | None = None,
     ):
-
         hidden_states = self.embedding_model.wav2vec2(input_values).extract_features
         return hidden_states

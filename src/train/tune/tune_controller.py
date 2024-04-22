@@ -1,3 +1,16 @@
+from datetime import datetime
+from os.path import join
+
+import torch
+from pytorch_lightning.callbacks import Checkpoint
+from ray import tune
+from ray.air import ScalingConfig, RunConfig, CheckpointConfig
+from ray.train.torch import TorchTrainer
+from ray.tune.schedulers import ASHAScheduler
+
+from src.config.constants import ROOT_DIR
+from src.train.callbacks.delete_checkpoint import DeleteCallback
+from src.train.train_func import train_func
 
 
 def tune_wapper_of_train_func(config):
@@ -13,6 +26,7 @@ def tune_wapper_of_train_func(config):
         torch.cuda.empty_cache()
         tune.utils.wait_for_gpu()
         raise e from e
+
 
 def start_tuning():
     storage_path = join(ROOT_DIR, 'tmp', 'tune')
@@ -52,7 +66,7 @@ def start_tuning():
     )
 
     # Define a TorchTrainer without hyper-parameters for Tuner
-    checkpoint = Checkpoint("s3://bucket/ckpt_dir")
+    # checkpoint = Checkpoint("s3://bucket/ckpt_dir")
 
     ray_trainer = TorchTrainer(
         tune_wapper_of_train_func,

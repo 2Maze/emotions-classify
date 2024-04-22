@@ -75,7 +75,6 @@ class LitModule(L.LightningModule):
         # )
         self.focal_loss = None
 
-
     def forward(self, x):
         return self.model(x)
 
@@ -85,7 +84,7 @@ class LitModule(L.LightningModule):
         # tfa.losses.SigmoidFocalCrossEntropy()
         if self.focal_loss is not None:
             loss = self.focal_loss(outputs, batch['emotion'])
-        else :
+        else:
             loss = ce_loss
         self.log('train/ce_loss', ce_loss, on_step=True, on_epoch=False)
         self.log('train/focal_loss', loss, on_step=True, on_epoch=False)
@@ -115,7 +114,6 @@ class LitModule(L.LightningModule):
             loss = self.focal_loss(outputs, batch['emotion'])
         else:
             loss = ce_loss
-
 
         self.val_loss.append(loss.item())
         if self.is_tune is False:

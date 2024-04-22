@@ -1,4 +1,3 @@
-
 import torch
 import numpy as np
 import torch.nn.functional as F
@@ -50,12 +49,12 @@ class SigmoidFocalCrossEntropy(torch.nn.Module):
         alpha_factor = 1.0
         modulating_factor = 1.0
 
-        if True or  self.alpha:
+        if True or self.alpha:
             alpha_factor = (targets * self.alpha
                             + (1 - targets)
                             * (1 - self.alpha))
 
-        if True or  self.gamma:
+        if True or self.gamma:
             modulating_factor = torch.pow((1.0 - p_t), self.gamma)
 
         # pt = torch.exp(-ce_loss)

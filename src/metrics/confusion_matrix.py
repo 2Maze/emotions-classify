@@ -31,7 +31,7 @@ class CreateConfMatrix(Module):
         plt.title('Confusion Matrix', fontsize=fontsize_title)
 
         # Show all ticks and label them with the respective list entries
-        font = {  'size': 24}
+        font = {'size': 24}
         plt.rc('font', **font)
 
         hmap = sns.heatmap(

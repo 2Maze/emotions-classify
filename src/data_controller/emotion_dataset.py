@@ -2,9 +2,9 @@ import librosa
 import json
 import os
 import numpy as np
+from typing import Optional
 
 from torch.utils.data import Dataset
-from typing import Optional
 
 
 EMOTIONS = ['гнев', 'нейтраль', 'отвращение', 'печаль', 'радость', 'страх', 'удивление']
@@ -43,7 +43,7 @@ class EmotionDataset(Dataset):
         if self.padding_sec is not None:
             if len(speech_array) < self.target_length_samples:
                 speech_array = np.concatenate((speech_array,
-                                              np.zeros(int(self.target_length_samples - len(speech_array)))),
+                                               np.zeros(int(self.target_length_samples - len(speech_array)))),
                                               axis=0,
                                               dtype=np.float32)
             else:
