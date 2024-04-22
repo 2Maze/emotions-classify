@@ -1,3 +1,4 @@
+import os
 from os.path import split, dirname, join
 from functools import reduce
 

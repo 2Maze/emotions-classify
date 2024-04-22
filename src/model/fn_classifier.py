@@ -11,6 +11,7 @@ from transformers import Wav2Vec2Model, Wav2Vec2Config
 
 from config.constants import ROOT_DIR,PADDING_SEC
 
+
 class Wav2Vec2Classifier(nn.Module):
 
     def __init__(

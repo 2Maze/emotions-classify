@@ -50,15 +50,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from config.constants import ROOT_DIR, PADDING_SEC
-from utils.data import EmotionDataset
 from model import Wav2Vec2Classifier, Wav2Vec2CnnClassifier
 from metrics.confusion_matrix import CreateConfMatrix
-
-
+from src.train.train_func import train_func
+from src.train.tune.tune_controller import start_tuning
 
 
 def main():
-    # start_tuning()  # запустить тюнинг
+    start_tuning()  # запустить тюнинг
     train_func(
         {
             'lr': 1e-3,

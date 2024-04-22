@@ -9,7 +9,7 @@ from transformers import AutoProcessor, AutoModelForCTC
 from transformers.models.wav2vec2.modeling_wav2vec2 import Wav2Vec2Model, Wav2Vec2ForCTC
 from transformers import Wav2Vec2Model, Wav2Vec2Config
 
-from config.constants import ROOT_DIR,PADDING_SEC
+from config.constants import ROOT_DIR, PADDING_SEC
 
 class Wav2Vec2CnnClassifier(nn.Module):
 
