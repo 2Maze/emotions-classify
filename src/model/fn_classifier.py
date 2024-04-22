@@ -63,7 +63,7 @@ class Wav2Vec2Classifier(nn.Module):
         if self.conv_w_count > 0:
             self.feature_resizer2 = nn.Sequential(
                 OrderedDict([
-                    ("1d_conv", nn.Conv1d(768, self.conv_w_count, 1)),
+                    ("1d_conv", nn.Conv1d(512, self.conv_w_count, 1)),
                     ("bath_after_1d_conv", nn.BatchNorm1d( self.conv_w_count)),
                     ("relu_after_1d_conv", nn.ReLU(inplace=True)),
                 ]))
@@ -80,17 +80,19 @@ class Wav2Vec2Classifier(nn.Module):
 
 
 
-        for param in self.feature_extractor.parameters():
-            param.requires_grad = False
-        for param in self.feature_projection.parameters():
-            param.requires_grad = False
-        for param in  self.feature_post_projection.parameters():
+        # for param in self.feature_extractor.parameters():
+        #     param.requires_grad = False
+        # for param in self.feature_projection.parameters():
+        #     param.requires_grad = False
+        # for param in  self.feature_post_projection.parameters():
+        #     param.requires_grad = False
+        for param in self.embedding_model.wav2vec2.parameters():
             param.requires_grad = False
 
         self.classifier = nn.Sequential(
             nn.Linear(
                 self.padding_sec_w * (1 + self.conv_w_count)
-                + 768 * (1 + self.conv_h_count), 1 * self.layer_1_size,
+                + 512 * (1 + self.conv_h_count), 1 * self.layer_1_size,
                 bias=True
             ),
             nn.BatchNorm1d(1 * self.layer_1_size),
@@ -137,33 +139,33 @@ class Wav2Vec2Classifier(nn.Module):
         # res = nn.functional.normalize(embeddings)
         # return res
 
-        extract_features = self.feature_extractor(input_values)
-        extract_features = extract_features.transpose(1, 2)
-
-        if attention_mask is not None:
-            # compute reduced attention_mask corresponding to feature vectors
-            attention_mask = self._get_feature_vector_attention_mask(
-                extract_features.shape[1], attention_mask, add_adapter=False
-            )
-
-        hidden_states, extract_features = self.feature_projection(extract_features)
-        hidden_states = self.embedding_model.wav2vec2._mask_hidden_states(
-
-            hidden_states, mask_time_indices=mask_time_indices, attention_mask=attention_mask
-        )
-
+        # extract_features = self.feature_extractor(input_values)
+        # extract_features = extract_features.transpose(1, 2)
+        #
+        # if attention_mask is not None:
+        #     # compute reduced attention_mask corresponding to feature vectors
+        #     attention_mask = self._get_feature_vector_attention_mask(
+        #         extract_features.shape[1], attention_mask, add_adapter=False
+        #     )
+        #
+        # hidden_states, extract_features = self.feature_projection(extract_features)
+        # hidden_states = self.embedding_model.wav2vec2._mask_hidden_states(
+        #     hidden_states, mask_time_indices=mask_time_indices, attention_mask=attention_mask
+        # )
+        hidden_states = self.embedding_model.wav2vec2(input_values).extract_features
+        # print(hidden_states.size())
         # hidden_states = self.feature_post_projection(hidden_states)
 
         resize_tensors = []
 
         if  self.conv_h_count > 0:
             # print(hidden_states.size())
-            resized_features1 = self.feature_resizer1(hidden_states.view(-1, self.padding_sec_w * 1, 768))
-            resized_features1 = resized_features1.view(-1, 768 * self.conv_h_count)
+            resized_features1 = self.feature_resizer1(hidden_states.view(-1, self.padding_sec_w * 1, 512))
+            resized_features1 = resized_features1.view(-1, 512 * self.conv_h_count)
             resize_tensors.append(resized_features1)
         if self.conv_w_count > 0:
             # print(hidden_states.size())
-            resized_features2 = self.feature_resizer2(hidden_states.view(-1, 768 * 1, self.padding_sec_w))
+            resized_features2 = self.feature_resizer2(hidden_states.view(-1, 512 * 1, self.padding_sec_w))
             resized_features2 = resized_features2.view(-1, self.padding_sec_w * self.conv_w_count)
             resize_tensors.append(resized_features2)
 
@@ -173,7 +175,11 @@ class Wav2Vec2Classifier(nn.Module):
         # resized_features = hidden_states.mean(axis=1)
         resized_features = torch.cat((hidden_states.mean(axis=1), hidden_states.mean(axis=2), *resize_tensors), 1)
         resized_features = nn.functional.normalize(resized_features)
-        #
+
+        # res_ =
+        # print("final_res", res_, type(res_))
+        # print(res_.size())
+        # exit(-1)
 
         # print("resized_features", hidden_states.size(), resized_features.size())
 
