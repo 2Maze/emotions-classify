@@ -17,13 +17,13 @@ class Wav2Vec2CnnClassifier(nn.Module):
     def __init__(
             self,
             num_classes,
-            padding_sec,
+            # padding_sec,
             config: dict | None = None,
             **k_,
     ):
         super(Wav2Vec2CnnClassifier, self).__init__()
-        self.padding_sec = padding_sec
-        self.padding_sec_w = 50 * padding_sec - 1
+        self.padding_sec = config['padding_sec']
+        self.padding_sec_w = 50 *  self.padding_sec - 1
 
         self.config = config
 

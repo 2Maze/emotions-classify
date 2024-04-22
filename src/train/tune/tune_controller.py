@@ -8,9 +8,10 @@ from ray.air import ScalingConfig, RunConfig, CheckpointConfig
 from ray.train.torch import TorchTrainer
 from ray.tune.schedulers import ASHAScheduler
 
-from src.config.constants import ROOT_DIR
-from src.train.callbacks.delete_checkpoint import DeleteCallback
-from src.train.train_func import train_func
+from config.constants import ROOT_DIR
+from train.callbacks.delete_checkpoint import DeleteCallback
+from train.train_func import train_func
+from config.constants import ROOT_DIR, PADDING_SEC
 
 
 def tune_wapper_of_train_func(config):
@@ -41,6 +42,14 @@ def start_tuning():
         # "conv_h_count": tune.choice([0, 1, 2, 4, 8, 16]),
         # "conv_w_count": tune.choice([0, 1, 2, 4, 8, 16]),
         "num_workers": 1
+    } | {
+
+        'alpha': 0 * 0.25,
+        "reduction": "mean",
+        "from_logits": False,
+        "padding_sec": PADDING_SEC,
+        "is_tune": True,
+        "conv_lr": 1e-3,
     }
     # The maximum training epochs
     num_epochs = 20

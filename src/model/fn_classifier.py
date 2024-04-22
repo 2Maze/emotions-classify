@@ -16,21 +16,21 @@ class Wav2Vec2Classifier(nn.Module):
     def __init__(
             self,
             num_classes,
-            padding_sec,
-            conv_h_count: int = 0,
-            conv_w_count: int = 0,
-            layer_1_size: int = 1024,
-            layer_2_size: int = 512,
-            config: dict | None = None,
+            # padding_sec,
+            # conv_h_count: int = 0,
+            # conv_w_count: int = 0,
+            # layer_1_size: int = 1024,
+            # layer_2_size: int = 512,
+            config: dict | None,
     ):
         super(Wav2Vec2Classifier, self).__init__()
-        self.padding_sec = padding_sec
-        self.padding_sec_w = 50 * padding_sec - 1
+        self.padding_sec = config['padding_sec']
+        self.padding_sec_w = 50 * self.padding_sec - 1
 
-        self.conv_h_count = conv_h_count
-        self.conv_w_count = conv_w_count
-        self.layer_1_size = layer_1_size
-        self.layer_2_size = layer_2_size
+        self.conv_h_count = config['conv_h_count']
+        self.conv_w_count = config['conv_w_count']
+        self.layer_1_size = config['layer_1_size']
+        self.layer_2_size = config['layer_2_size']
         self.config = config
 
         # configuration = Wav2Vec2Config()

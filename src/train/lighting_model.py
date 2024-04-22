@@ -4,45 +4,48 @@ import torch.nn.functional as F
 import torchmetrics
 import torch
 
-from src.metrics.confusion_matrix import CreateConfMatrix
-from src.model import Wav2Vec2CnnClassifier
+from metrics.confusion_matrix import CreateConfMatrix
+from model import Wav2Vec2CnnClassifier
+
+from config.constants import ROOT_DIR, PADDING_SEC
 
 
 class LitModule(L.LightningModule):
     def __init__(
             self,
             num_classes: int,
-            learning_rate: float = 1e-3,
-            conv_learning_rate: float = 1e-3,
-            conv_h_count: int = 0,
-            conv_w_count: int = 0,
-            padding_sec: int = 0,
-            layer_1_size: int = 1024,
-            layer_2_size: int = 512,
-            h_mean_enable: bool = True,
-            w_mean_enable: bool = True,
-            config: dict | None = None,
-            lables: list[str] = None,
-            is_tune: bool = False,
+            # learning_rate: float = 1e-3,
+            # conv_learning_rate: float = 1e-3,
+            # conv_h_count: int = 0,
+            # conv_w_count: int = 0,
+            # padding_sec: int = 0,
+            # layer_1_size: int = 1024,
+            # layer_2_size: int = 512,
+            # h_mean_enable: bool = True,
+            # w_mean_enable: bool = True,
+            config: dict,
+            # lables: list[str] = None,
+            # is_tune: bool = False,
             dataset: list = None,
-            gamma: float = 2.0
+            # gamma: float = 2.0
     ):
         super().__init__()
         self.model = Wav2Vec2CnnClassifier(
             num_classes,
-            padding_sec,
-            conv_h_count=conv_h_count,
-            conv_w_count=conv_w_count,
-            layer_1_size=layer_1_size,
-            layer_2_size=layer_2_size,
+            dataset=dataset,
+            # padding_sec,
+            # conv_h_count=conv_h_count,
+            # conv_w_count=conv_w_count,
+            # layer_1_size=layer_1_size,
+            # layer_2_size=layer_2_size,
             config=config
         )
         self.config = config
-        self.is_tune = is_tune
+        self.is_tune = config["is_tune"]
         self.num_classes = num_classes
 
-        self.lr = learning_rate
-        self.conv_lr = conv_learning_rate
+        self.lr = config['lr']
+        self.conv_lr = config['conv_lr']
 
         self.val_loss = []
         self.val_pred = []
@@ -51,7 +54,7 @@ class LitModule(L.LightningModule):
         self.train_y_true = []
         self.acc = torchmetrics.classification.Accuracy(task='multiclass', num_classes=num_classes)
         self.f1 = torchmetrics.classification.F1Score(task='multiclass', num_classes=num_classes)
-        self.confusion_matrix = CreateConfMatrix(num_classes, lables, self.logger)
+        self.confusion_matrix = CreateConfMatrix(num_classes, list(dataset.emotions), self.logger)
 
         self.class_weights = []
         class_counts = np.bincount([i['emotion'] for i in dataset])
