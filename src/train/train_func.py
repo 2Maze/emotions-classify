@@ -15,12 +15,14 @@ from ray.train.lightning import (
 from config.constants import ROOT_DIR, PADDING_SEC
 from data_controller.load_data import load_data
 from train.lighting_model import LitModule
+from data_controller.emotion_dataset import EmotionSpectrogramDataset
 
 
 def train_func(config, tuning=False):
     train_dataloader, val_dataloader, dataset = load_data(
         bath_size=config["batch_size"],
-        num_workers=config["num_workers"]
+        num_workers=config["num_workers"],
+        dataset_class=EmotionSpectrogramDataset,
     )
 
     checkpoint_callback = ModelCheckpoint(

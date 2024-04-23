@@ -1,24 +1,24 @@
 from train.train_func import train_func
 from train.tune.tune_controller import start_tuning
-
+from data_controller.emotion_dataset import EmotionSpectrogramDataset
 from config.constants import ROOT_DIR, PADDING_SEC
 
 
 def main():
-    start_tuning()  # запустить тюнинг
+    # start_tuning()  # запустить тюнинг
     train_func(
-        # {
-        #     'lr': 1e-3,
-        #     'batch_size': 64,
-        #     'num_workers': 1,
-        #     'alpha': 0 * 0.25,
-        #     "gamma": 0 * 2.0,
-        #     "reduction": "mean",
-        #     "from_logits": False,
-        #     "padding_sec": PADDING_SEC,
-        #     "is_tune": False,
-        #     "conv_lr": 1e-3,
-        # }
+        {
+            'lr': 1e-3,
+            'batch_size': 64,
+            'num_workers': 1,
+            'alpha': 0 * 0.25,
+            "gamma": 0 * 2.0,
+            "reduction": "mean",
+            "from_logits": False,
+            "padding_sec": PADDING_SEC,
+            "is_tune": False,
+            "conv_lr": 1e-3,
+        }
 
         # {
         #     'layer_1_size': 1024,

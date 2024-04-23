@@ -5,7 +5,7 @@ import torchmetrics
 import torch
 
 from metrics.confusion_matrix import CreateConfMatrix
-from model import Wav2Vec2CnnClassifier
+from model import Wav2Vec2CnnClassifier, SpectrogramCnnClassifier
 
 from config.constants import ROOT_DIR, PADDING_SEC
 
@@ -30,7 +30,7 @@ class LitModule(L.LightningModule):
             # gamma: float = 2.0
     ):
         super().__init__()
-        self.model = Wav2Vec2CnnClassifier(
+        self.model = SpectrogramCnnClassifier(
             num_classes,
             dataset=dataset,
             # padding_sec,
