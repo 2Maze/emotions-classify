@@ -10,6 +10,10 @@ from ray.tune.experiment import Trial
 
 class DeleteCallback(Callback):
 
+    def __init__(self, *a, acc_delete_limit=0.8, **kw):
+        super().__init__(*a, **kw)
+        self.acc_delete_limit = acc_delete_limit
+
     @staticmethod
     def get_train_num_from_dir(path):
         return int(split(join("some", path))[1].split('_')[3].strip())
@@ -20,7 +24,7 @@ class DeleteCallback(Callback):
         last_result = trial.last_result
         # Filter out which checkpoints to delete on trial completion
         print("___deleting checkpoint", last_result, trial, trial.path, trial.local_path)
-        if True and last_result["val/acc"] < 0.75:
+        if True and last_result["val/acc"] < self.acc_delete_limit:
             try:
                 tune_root_dir, curr_dir = split(trial.path)
                 curr_tune_num = self.get_train_num_from_dir(trial.path)
@@ -43,7 +47,7 @@ class DeleteCallback(Callback):
                     results_dir = join(one_tune_iteration_dir, "result.json")
                     with open(results_dir, "r") as f:
                         results = [i['checkpoint_dir_name'] for i in (json.loads(i) for i in f.readlines()) if
-                                   i['val/acc'] > 0.75]
+                                   i['val/acc'] > self.acc_delete_limit]
                     print("one_tune_iteration_dir", one_tune_iteration_dir, checkpoint_dir, split(checkpoint_dir)[1],
                           last_result["val/acc"])
                     if split(checkpoint_dir)[1] not in results:

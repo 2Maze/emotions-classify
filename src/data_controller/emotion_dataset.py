@@ -61,17 +61,19 @@ class EmotionDataset(Dataset):
 
 class EmotionSpectrogramDataset(EmotionDataset):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, fit=(512 * 2 - 2), **kwargs):
         super().__init__(*args, **kwargs)
-        self.spectrogram_transform = torchaudio.transforms.Spectrogram(n_fft=800)
-        self.target_length_samples = self.padding_sec * 40 + 1
+        self.spectrogram_transform = torchaudio.transforms.Spectrogram(n_fft= fit )
+        self.target_length_samples = 512 # self.padding_sec * 40 + 1
+        self.fit = fit
+
     def __getitem__(self, idx):
         key = self.annotation_files[idx]
 
         waveform, sample_rate = torchaudio.load(os.path.join(self.folder, key), normalize=True)
         spectrogram = self.spectrogram_transform(waveform)
         # print("^^1", spectrogram.size())
-        spectrogram = spectrogram.view(401, -1)
+        spectrogram = spectrogram.view(self.target_length_samples, -1)
         # print("^^2", spectrogram.size())
         if self.padding_sec is not None:
             if spectrogram.size()[1] < self.target_length_samples:

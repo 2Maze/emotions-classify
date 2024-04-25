@@ -15,7 +15,10 @@ def collate_fn(items):
     output = {key: [] for key in list(items[0].keys())}
     for item in items:
         for key in item:
-            output[key].append(torch.tensor(item[key]))
+            if isinstance(item[key], torch.Tensor):
+                output[key].append(item[key])
+            else:
+                output[key].append(torch.tensor(item[key]))
     for key in list(output.keys()):
         if key == 'emotion' or key == 'state':
             output[key] = torch.stack(output[key])

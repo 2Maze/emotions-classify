@@ -3,10 +3,11 @@ import numpy as np
 import torch.nn.functional as F
 import torchmetrics
 import torch
+from vit_pytorch import ViT
+
 
 from metrics.confusion_matrix import CreateConfMatrix
-from model import Wav2Vec2CnnClassifier, SpectrogramCnnClassifier
-
+from model import Wav2Vec2CnnClassifier, SpectrogramCnnClassifier, TransformerClassifier
 from config.constants import ROOT_DIR, PADDING_SEC
 
 
@@ -30,16 +31,45 @@ class LitModule(L.LightningModule):
             # gamma: float = 2.0
     ):
         super().__init__()
-        self.model = SpectrogramCnnClassifier(
+        # self.model = SpectrogramCnnClassifier(
+        #     num_classes,
+        #     dataset=dataset,
+        #     # padding_sec,
+        #     # conv_h_count=conv_h_count,
+        #     # conv_w_count=conv_w_count,
+        #     # layer_1_size=layer_1_size,
+        #     # layer_2_size=layer_2_size,
+        #     config=config
+        # )
+        # efficient_transformer = Linformer(
+        #     dim=128,
+        #     seq_len=49 + 1,  # 7x7 patches + 1 cls-token
+        #     depth=12,
+        #     heads=8,
+        #     k=64
+        # )
+
+
+#         self.model = ViT(
+#             # transformer=efficient_transformer,
+#     image_size = 512,
+#     patch_size = 64,
+#     num_classes = 7,
+#     dim = 1024,
+#     depth = 6,
+#     heads = 16,
+#     mlp_dim = 2048,
+#     dropout = 0.1,
+#     emb_dropout = 0.1,
+#             channels=1,
+# )
+
+        self.model = TransformerClassifier(
             num_classes,
-            dataset=dataset,
-            # padding_sec,
-            # conv_h_count=conv_h_count,
-            # conv_w_count=conv_w_count,
-            # layer_1_size=layer_1_size,
-            # layer_2_size=layer_2_size,
-            config=config
+                dataset=dataset,
+            config=config,
         )
+
         self.config = config
         self.is_tune = config["is_tune"]
         self.num_classes = num_classes
@@ -61,7 +91,11 @@ class LitModule(L.LightningModule):
         num_classes = len(class_counts)
         total_samples = len(dataset)
         for count in class_counts:
-            weight = 1 / (count / total_samples)
+            # print(count,  total_samples)
+            if count != 0:
+                weight = 1 / (count / total_samples)
+            else:
+                weight = 0
             self.class_weights.append(weight)
         self.focal_loss_w = torch.FloatTensor(self.class_weights).to('cuda:0')
 
@@ -151,8 +185,8 @@ class LitModule(L.LightningModule):
 
         scheduler = torch.optim.lr_scheduler.MultiStepLR(
             optimizer,
-            milestones=[i for i in [100, 200, 300, 400, 650, 800]],
-            gamma=(1. / 3.)
+            milestones=[i for i in [ 300,   650, 800]],
+            gamma=0.1
         )
         return [optimizer], [scheduler]
 

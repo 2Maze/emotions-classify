@@ -18,3 +18,5 @@ transformers==4.39.3
 ray[tune]
 pytorch_lightning
 gputil
+vit-pytorch
+

@@ -18,7 +18,12 @@ from train.lighting_model import LitModule
 from data_controller.emotion_dataset import EmotionSpectrogramDataset
 
 
-def train_func(config, tuning=False):
+def train_func(
+        config,
+        tuning=False,
+        enable_tune_features=False,
+        saved_checkpoint: str | None = None
+):
     train_dataloader, val_dataloader, dataset = load_data(
         bath_size=config["batch_size"],
         num_workers=config["num_workers"],
@@ -50,10 +55,7 @@ def train_func(config, tuning=False):
         **lit_model_params
     )
 
-    path = join(
-        ROOT_DIR, "tmp", "tune", "tune_analyzing_results_20240416-141925",
-        "TorchTrainer_55119_00068_68_batch_size=64,conv_h_count=16,conv_w_count=2,layer_1_size=1024,layer_2_size=64,lr=0.0088_2024-04-16_14-19-27",
-        "checkpoint_000009", "checkpoint.ckpt")
+
 
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
     trainer = L.Trainer(**(dict(accelerator='gpu',
@@ -69,6 +71,6 @@ def train_func(config, tuning=False):
         strategy=RayDDPStrategy(find_unused_parameters=True),
 
     ) if tuning else dict(strategy='auto'))))
-    if tuning:
+    if tuning and enable_tune_features:
         trainer = prepare_trainer(trainer)
-    return trainer.fit(model, train_dataloader, val_dataloader)  # , ckpt_path=path
+    return trainer.fit(model, train_dataloader, val_dataloader, ckpt_path=saved_checkpoint)  # , ckpt_path=path

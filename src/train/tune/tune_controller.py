@@ -1,5 +1,6 @@
 from datetime import datetime
 from os.path import join
+import traceback
 
 import torch
 from pytorch_lightning.callbacks import Checkpoint
@@ -23,7 +24,7 @@ def tune_wapper_of_train_func(config):
             tuning=True,
         )
     except Exception as e:
-        print("some error win train")
+        print("some error win train", e, traceback.format_exc())
         torch.cuda.empty_cache()
         tune.utils.wait_for_gpu()
         raise e from e
@@ -33,28 +34,42 @@ def start_tuning():
     storage_path = join(ROOT_DIR, 'tmp', 'tune')
     exp_name = "tune_analyzing_results_" + datetime.now().strftime("%Y%m%d-%H%M%S")
     # exp_name = "tune_analyzing_results_20240410-090935"
-    search_space = {
-        # "layer_1_size": tune.choice([32, 64, 128, 256, 512, 1024, 2048]),
-        # "layer_2_size": tune.choice([32, 64, 128, 256, 512, 1024, 2048]),
+    search_space =         {
+            'lr': 1e-3,
+            'batch_size': 16,
+            'num_workers': 1,
+            'alpha': 0 * 0.25,
+            "gamma": 0 * 2.0,
+            "reduction": "mean",
+            "from_logits": False,
+            "padding_sec": PADDING_SEC,
+            "is_tune": False,
+        "enable_tune_features": False,
+            "conv_lr": 1e-3,
+            'layer_1_size': 2048,
+            'layer_2_size': 1024,
+            'patch_transformer_size': 16,
+            'transformer_depth': 6,
+            'transformer_attantion_head_count': 16
+        } | {
+        "layer_1_size": tune.choice([32, 64, 128, 256, 512,]),
+        "layer_2_size": tune.choice([32, 64, 128, 256, 512,]),
         "lr": tune.loguniform(1e-4, 1e-1),
-        "batch_size": tune.choice([4, 8, 16, 32, 64]),
-        "gamma": tune.choice([i / 100 * 2 + 0.1 for i in range(100)]),
+        "batch_size": tune.choice([8, 16, 32]),
+        # "gamma": tune.choice([i / 100 * 2 + 0.1 for i in range(100)]),
         # "conv_h_count": tune.choice([0, 1, 2, 4, 8, 16]),
         # "conv_w_count": tune.choice([0, 1, 2, 4, 8, 16]),
-        "num_workers": 1
-    } | {
-
-        'alpha': 0 * 0.25,
-        "reduction": "mean",
-        "from_logits": False,
-        "padding_sec": PADDING_SEC,
+        "num_workers": 15,
         "is_tune": True,
-        "conv_lr": 1e-3,
+        "enable_tune_features": False,
+        "patch_transformer_size": tune.choice([2**i for i in range(2, 7)]),
+        "transformer_depth": tune.choice(list(range(2, 10))),
+        'transformer_attantion_head_count': tune.choice(list(range(2, 24, 2))),
     }
     # The maximum training epochs
     num_epochs = 20
     # Number of sampls from parameter space
-    num_samples = 100
+    num_samples = 200
     # scheduler = ASHAScheduler(max_t=num_epochs, grace_period=1, reduction_factor=2)
 
     scaling_config = ScalingConfig(
