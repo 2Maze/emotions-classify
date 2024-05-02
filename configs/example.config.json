@@ -1,0 +1,367 @@
+{
+  "pipeline": [
+    {
+      "type": "train",
+      "model": "Wav2Vec2FnClassifier",
+      "model_architecture": {
+        "conv_h_count": 1,
+        "conv_w_count": 1,
+        "layer_1_size": 256,
+        "layer_2_size": 256
+      },
+      "learn_params": {
+        "lr": {
+          "base_lr": 0.0007505403591860749,
+          "conv_lr": 0.0007505403591860749
+        },
+        "batch_size": 8,
+        "padding_sec": 5,
+        "max_epoch": 200
+      },
+      "saving_data_params": {
+        "saved_checkpoints_path": [
+          "$$ROOT_DIR$$",
+          "weights",
+          "checkpoints",
+          "$$DATETIME$$"
+        ],
+        "saved_checkpoints_filename": [
+          "classifier_",
+          "$$DATETIME$$",
+          "_{epoch:02d}"
+        ],
+        "tensorboard_lr_monitors_logs_path": [
+          "$$ROOT_DIR$$",
+          "logs"
+        ],
+        "start_from_saved_checkpoint_path": [
+          "$$ROOT_DIR$$",
+          "tmp",
+          "tune",
+          "checkpoint.ckpt"
+        ]
+      }
+    },
+    {
+      "type": "train",
+      "model": "Wav2Vec2CnnClassifier",
+      "model_architecture": {},
+      "learn_params": {
+        "lr": {
+          "base_lr": 0.0007505403591860749
+        },
+        "batch_size": 8,
+        "padding_sec": 5,
+        "max_epoch": 200
+      },
+      "saving_data_params": {
+        "saved_checkpoints_path": [
+          "$$ROOT_DIR$$",
+          "weights",
+          "checkpoints",
+          "$$DATETIME$$"
+        ],
+        "saved_checkpoints_filename": [
+          "classifier_",
+          "$$DATETIME$$",
+          "_{epoch:02d}"
+        ],
+        "tensorboard_lr_monitors_logs_path": [
+          "$$ROOT_DIR$$",
+          "logs"
+        ],
+        "start_from_saved_checkpoint_path": null
+      }
+    },
+    {
+      "type": "train",
+      "model": "SpectrogramCnnClassifier",
+      "model_architecture": {},
+      "learn_params": {
+        "lr": {
+          "base_lr": 0.0007505403591860749
+        },
+        "batch_size": 8,
+        "spectrogram_size": 401,
+        "max_epoch": 200
+      },
+      "saving_data_params": {
+        "saved_checkpoints_path": [
+          "$$ROOT_DIR$$",
+          "weights",
+          "checkpoints",
+          "$$DATETIME$$"
+        ],
+        "saved_checkpoints_filename": [
+          "classifier_",
+          "$$DATETIME$$",
+          "_{epoch:02d}"
+        ],
+        "tensorboard_lr_monitors_logs_path": [
+          "$$ROOT_DIR$$",
+          "logs"
+        ],
+        "start_from_saved_checkpoint_path": null
+      }
+    },
+    {
+      "type": "train",
+      "model": "TransformerClassifier",
+      "model_architecture": {
+        "layer_1_size": 256,
+        "layer_2_size": 256,
+        "patch_transformer_size": 16,
+        "transformer_depth": 4,
+        "transformer_attantion_head_count": 10
+      },
+      "learn_params": {
+        "lr": {
+          "base_lr": 0.0007505403591860749
+        },
+        "batch_size": 8,
+        "spectrogram_size": 512,
+        "max_epoch": 200
+      },
+      "saving_data_params": {
+        "saved_checkpoints_path": [
+          "$$ROOT_DIR$$",
+          "weights",
+          "checkpoints",
+          "$$DATETIME$$"
+        ],
+        "saved_checkpoints_filename": [
+          "classifier_",
+          "$$DATETIME$$",
+          "_{epoch:02d}"
+        ],
+        "tensorboard_lr_monitors_logs_path": [
+          "$$ROOT_DIR$$",
+          "logs"
+        ],
+        "start_from_saved_checkpoint_path": null
+      }
+    },
+    {
+      "type": "tune",
+      "model": "Wav2Vec2FnClassifier",
+      "model_architecture": {
+        "conv_h_count": null,
+        "conv_w_count": null,
+        "layer_1_size": null,
+        "layer_2_size": null
+      },
+      "learn_params": {
+        "lr": {
+          "base_lr": null,
+          "conv_lr": null
+        },
+        "batch_size": null,
+        "padding_sec": 5,
+        "max_epoch": 200
+      },
+      "saving_data_params": {
+        "saved_checkpoints_path": [
+          "$$ROOT_DIR$$",
+          "weights",
+          "checkpoints",
+          "$$DATETIME$$"
+        ],
+        "saved_checkpoints_filename": [
+          "classifier_",
+          "$$DATETIME$$",
+          "_{epoch:02d}"
+        ],
+        "tensorboard_lr_monitors_logs_path": [
+          "$$ROOT_DIR$$",
+          "logs"
+        ],
+        "tune_results_path": [
+          "$$ROOT_DIR$$",
+          "tmp",
+          "tune"
+        ],
+        "tune_results_dir": [
+          "tune_",
+          "$$DATETIME$$"
+        ],
+        "tune_session_path": [
+          "$$ROOT_DIR$$",
+          "tmp",
+          "ray",
+          "session"
+        ]
+      },
+      "tune": {
+        "enable_tune_features": false,
+        "max_tune_epochs": 10,
+        "num_samples": 100
+      }
+    },
+    {
+      "type": "tune",
+      "model": "Wav2Vec2CnnClassifier",
+      "model_architecture": {},
+      "learn_params": {
+        "lr": {
+          "base_lr": null
+        },
+        "batch_size": null,
+        "padding_sec": 5,
+        "max_epoch": 200
+      },
+      "saving_data_params": {
+        "saved_checkpoints_path": [
+          "$$ROOT_DIR$$",
+          "weights",
+          "checkpoints",
+          "$$DATETIME$$"
+        ],
+        "saved_checkpoints_filename": [
+          "classifier_",
+          "$$DATETIME$$",
+          "_{epoch:02d}"
+        ],
+        "tensorboard_lr_monitors_logs_path": [
+          "$$ROOT_DIR$$",
+          "logs"
+        ],
+        "tune_results_path": [
+          "$$ROOT_DIR$$",
+          "tmp",
+          "tune"
+        ],
+        "tune_results_dir": [
+          "tune_",
+          "$$DATETIME$$"
+        ],
+        "tune_session_path": [
+          "$$ROOT_DIR$$",
+          "tmp",
+          "ray",
+          "session"
+        ]
+      },
+      "tune": {
+        "enable_tune_features": false,
+        "max_tune_epochs": 10,
+        "num_samples": 100
+      }
+    },
+    {
+      "type": "tune",
+      "model": "SpectrogramCnnClassifier",
+      "model_architecture": {},
+      "learn_params": {
+        "lr": {
+          "base_lr": null
+        },
+        "batch_size": null,
+        "spectrogram_size": 401,
+        "max_epoch": 200
+      },
+      "saving_data_params": {
+        "saved_checkpoints_path": [
+          "$$ROOT_DIR$$",
+          "weights",
+          "checkpoints",
+          "$$DATETIME$$"
+        ],
+        "saved_checkpoints_filename": [
+          "classifier_",
+          "$$DATETIME$$",
+          "_{epoch:02d}"
+        ],
+        "tensorboard_lr_monitors_logs_path": [
+          "$$ROOT_DIR$$",
+          "logs"
+        ],
+        "tune_results_path": [
+          "$$ROOT_DIR$$",
+          "tmp",
+          "tune"
+        ],
+        "tune_results_dir": [
+          "tune_",
+          "$$DATETIME$$"
+        ],
+        "tune_session_path": [
+          "$$ROOT_DIR$$",
+          "tmp",
+          "ray",
+          "session"
+        ]
+      },
+      "tune": {
+        "enable_tune_features": false,
+        "max_tune_epochs": 20,
+        "num_samples": 100
+      }
+    },
+    {
+      "type": "tune",
+      "model": "TransformerClassifier",
+      "model_architecture": {
+        "layer_1_size": null,
+        "layer_2_size": null,
+        "patch_transformer_size": null,
+        "transformer_depth": null,
+        "transformer_attantion_head_count": null
+      },
+      "learn_params": {
+        "lr": {
+          "base_lr": null
+        },
+        "batch_size": null,
+        "spectrogram_size": 512,
+        "max_epoch": 200
+      },
+      "saving_data_params": {
+        "saved_checkpoints_path": [
+          "$$ROOT_DIR$$",
+          "weights",
+          "checkpoints",
+          "$$DATETIME$$"
+        ],
+        "saved_checkpoints_filename": [
+          "classifier_",
+          "$$DATETIME$$",
+          "_{epoch:02d}"
+        ],
+        "tensorboard_lr_monitors_logs_path": [
+          "$$ROOT_DIR$$",
+          "logs"
+        ],
+        "tune_results_path": [
+          "$$ROOT_DIR$$",
+          "tmp",
+          "tune"
+        ],
+        "tune_results_dir": [
+          "tune_",
+          "$$DATETIME$$"
+        ],
+        "tune_session_path": [
+          "$$ROOT_DIR$$",
+          "tmp",
+          "ray",
+          "session"
+        ]
+      },
+      "tune": {
+        "enable_tune_features": false,
+        "max_tune_epochs": 20,
+        "num_samples": 100
+      }
+    },
+    {
+      "type": "print_tune_res",
+      "res_path": [
+        "$$ROOT_DIR$$",
+        "tmp",
+        "tune",
+        "tune_20240425-101338"
+      ]
+    }
+  ],
+  "load_dataset_workers_num": 1
+}
