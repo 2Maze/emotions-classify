@@ -5,3 +5,6 @@
 /logs/**/*
 /weights/**/*
 /tmp/**/*
+/configs/**/*
+!/configs/example.config.json
+!*.gitkeep
