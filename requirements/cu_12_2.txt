@@ -1,12 +1,16 @@
---extra-index-url https://download.pytorch.org/whl/cu122
+--extra-index-url https://download.pytorch.org/whl/cu121
+wheel
+PyYAML
 jupyter==1.0.0
+notebook
 pyarrow==15.0.0
 matplotlib==3.8.2
 gdown==5.0.0
 catboost==1.2.2
 seaborn==0.13.2
-
-torchaudio==2.2.2
+conan
+torch
+torchaudio
 torchvision
 librosa~=0.10.1
 pandas~=2.2.1
@@ -19,4 +23,6 @@ ray[tune]
 pytorch_lightning
 gputil
 vit-pytorch
-
+requests==2.28.1
+tensorboard==2.16.2
+protobuf==5.26.1
