@@ -12,31 +12,22 @@ from transformers import Wav2Vec2Model, Wav2Vec2Config
 from config.constants import ROOT_DIR, PADDING_SEC
 
 
-class Wav2Vec2CnnClassifier(nn.Module):
+class SpectrogramCnnClassifier(nn.Module):
 
     def __init__(
             self,
             num_classes,
             # padding_sec,
             config: dict | None = None,
+            dataset=None,
             **k_,
     ):
-        super(Wav2Vec2CnnClassifier, self).__init__()
-        self.padding_sec = config['padding_sec']
-        self.padding_sec_w = 50 *  self.padding_sec - 1
+        super(SpectrogramCnnClassifier, self).__init__()
+        self.padding_sec = config['learn_params']['padding_sec']
+        self.padding_sec_w = 50 * self.padding_sec - 1
 
         self.config = config
-
-        # configuration = Wav2Vec2Config()
-        self.embedding_model: Wav2Vec2ForCTC = AutoModelForCTC.from_pretrained(
-            "Eyvaz/wav2vec2-base-russian-demo-kaggle",
-            cache_dir=join(ROOT_DIR, "weights", "loaded_weights", ),
-            # config=configuration,
-        )
-        processor = AutoProcessor.from_pretrained(
-            "Eyvaz/wav2vec2-base-russian-demo-kaggle",
-            cache_dir=join(ROOT_DIR, "weights", "loaded_weights", ),
-        )
+        self.spectrogram_size = config['learn_params']['spectrogram_size']
 
         self.efficientnet_model = models.efficientnet_b0(weights=False)
 
@@ -44,8 +35,8 @@ class Wav2Vec2CnnClassifier(nn.Module):
                                                            bias=False)
         self.efficientnet_model.classifier[-1] = nn.Linear(in_features=1280, out_features=num_classes, bias=True)
 
-        for param in self.embedding_model.wav2vec2.parameters():
-            param.requires_grad = False
+        # for param in self.embedding_model.wav2vec2.parameters():
+        #     param.requires_grad = False
 
         self.classifier = self.efficientnet_model
 
@@ -55,8 +46,8 @@ class Wav2Vec2CnnClassifier(nn.Module):
             mask_time_indices: torch.FloatTensor | None = None,
             attention_mask: torch.Tensor | None = None,
     ):
-        features = self.get_embeddings(X, mask_time_indices=mask_time_indices, attention_mask=attention_mask)
-        logits = self.classifier(features.view(-1, 1, 249, 512))
+        # features = self.get_embeddings(X, mask_time_indices=mask_time_indices, attention_mask=attention_mask)
+        logits = self.classifier(X.view(-1, 1, self.spectrogram_size, self.spectrogram_size))
         logits = torch.softmax(logits, dim=1)
         return logits
 

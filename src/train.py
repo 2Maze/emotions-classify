@@ -1,9 +1,14 @@
+import json
+import os
+from datetime import datetime
+
 from train.train_func import train_func
 from train.tune.tune_controller import start_tuning
 from data_controller.emotion_dataset import EmotionSpectrogramDataset
 from config.constants import ROOT_DIR, PADDING_SEC
 from utils.tuning_res_viewer import check_tuning_res
-
+from utils.cli_argparce import parse_args
+import sys
 
 def main():
     # start_tuning()  # запустить тюнинг
@@ -66,11 +71,56 @@ def main():
     #  'layer_1_size': 1024, 'layer_2_size': 1024,
     #  'lr': 0.006854079146121017, 'num_workers': 1}
     # )
+def config_builder(config: dict | list | str,  parent_config, __deep=0, __rules=None):
+    rules = __rules or  {
+        "$$ROOT_DIR$$": ROOT_DIR,
+        "$$DATETIME$$": datetime.now().strftime("%Y%m%d-%H%M%S"),
+        "$$MODEL_NAME$$": config.get("model"),
+    }
+
+
+    if isinstance(config, list):
+        for index, i in enumerate(config[:]):
+            config[index] = config_builder(config[index], parent_config, __deep=__deep+1, __rules=rules)
+    if isinstance(config, dict):
+        for k, v in config.items():
+            config[k] = config_builder(v, parent_config, __deep=__deep+1, __rules=rules)
+        if __deep == 0:
+            config['load_dataset_workers_num'] = parent_config['load_dataset_workers_num']
+            # config |= config.get('model_architecture', dict())
+            # config |= config.get('learn_params', dict())
+            # config |= {k: os.path.join(v) for k, v in config.get('saving_data_params', dict()).items()}
+            # config |= config.get('tune', dict())
+            # config.pop('model_architecture')
+            # config.pop('learn_params')
+            # config.pop('saving_data_params')
+            # config.pop('tune')
+    if isinstance(config, str):
+        config = rules.get(config, config)
+    return config
+
 
 
 if __name__ == '__main__':
+    # print(sys.argv)
+    results = parse_args()
+    print(results)
+    if results.parent_param == 'train':
+        with open( results.config_file, 'r') as f:
+            config = json.load(f)
+            for conf in config['pipeline']:
+                conf = config_builder(conf, config)
+                if conf['type'] == 'tune':
+                    start_tuning(conf)
+                elif conf['type'] == 'train':
+                    train_func(conf)
+                elif conf['type'] == 'print_tune_res':
+                    check_tuning_res(os.path.join(*conf['res_path']))
+                print(conf)
+
+
     # check_tuning_res('tune_analyzing_results_20240425-101338')
-    main()
+    # main()
 
 '''
 (0.8125, {'train_loop_config': {'batch_size': 16, 'conv_h_count': 8, 'conv_w_count': 0, 'layer_1_size': 512, 'layer_2_size': 256, 'lr': 0.0035923573027211784, 'num_workers': 1}})

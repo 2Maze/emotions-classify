@@ -22,6 +22,7 @@ class TransformerClassifier(nn.Module):
             num_classes,
             # padding_sec,
             config: dict | None = None,
+            dataset=None,
             **k_,
     ):
         super(TransformerClassifier, self).__init__()
@@ -30,18 +31,20 @@ class TransformerClassifier(nn.Module):
 
         self.config = config
 
-        self.layer_1_size = config['layer_1_size']
-        self.layer_2_size = config['layer_2_size']
+        self.layer_1_size = config['model_architecture']['layer_1_size']
+        self.layer_2_size = config['model_architecture']['layer_2_size']
+        self.spectrogram_size = config['learn_params']['spectrogram_size']
 
+        # https://github.com/lucidrains/vit-pytorch?tab=readme-ov-file#usage
         self.model = ViT(
             # transformer=efficient_transformer,
-            image_size=512,
-            patch_size=config['patch_transformer_size'],
-            num_classes=7,
-            dim=config['layer_1_size'],
-            depth=config['transformer_depth'],
-            heads=config['transformer_attantion_head_count'],
-            mlp_dim=config['layer_2_size'],
+            image_size=self.spectrogram_size,
+            patch_size=config['model_architecture']['patch_transformer_size'],
+            num_classes=num_classes,
+            dim=config['model_architecture']['layer_1_size'],
+            depth=config['model_architecture']['transformer_depth'],
+            heads=config['model_architecture']["transformer_attantion_head_count"],
+            mlp_dim=config['model_architecture']['layer_2_size'],
             dropout=0.1,
             emb_dropout=0.1,
             channels=1,
@@ -91,7 +94,7 @@ class TransformerClassifier(nn.Module):
         # image = torch.cat((image, image, image), dim=1)
         # inputs = self.image_processor(image, return_tensors="pt", do_rescale=False, ).to('cuda:0')
         # print(X.size())
-        inputs = self.model(X.view(-1, 1, 512, 512))
+        inputs = self.model(X.view(-1, 1, self.spectrogram_size, self.spectrogram_size))
         # logits = self.classifier(inputs)
         # logits = torch.softmax(inputs, dim=1)
         return inputs

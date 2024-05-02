@@ -22,15 +22,16 @@ class Wav2Vec2Classifier(nn.Module):
             # layer_1_size: int = 1024,
             # layer_2_size: int = 512,
             config: dict | None,
+            dataset=None,
     ):
         super(Wav2Vec2Classifier, self).__init__()
-        self.padding_sec = config['padding_sec']
+        self.padding_sec = config['learn_params']['padding_sec']
         self.padding_sec_w = 50 * self.padding_sec - 1
 
-        self.conv_h_count = config['conv_h_count']
-        self.conv_w_count = config['conv_w_count']
-        self.layer_1_size = config['layer_1_size']
-        self.layer_2_size = config['layer_2_size']
+        self.conv_h_count = config['model_architecture']['conv_h_count']
+        self.conv_w_count = config['model_architecture']['conv_w_count']
+        self.layer_1_size = config['model_architecture']['layer_1_size']
+        self.layer_2_size = config['model_architecture']['layer_2_size']
         self.config = config
 
         # configuration = Wav2Vec2Config()
@@ -156,7 +157,7 @@ class Wav2Vec2Classifier(nn.Module):
         resize_tensors = []
 
         if self.conv_h_count > 0:
-            # print(hidden_states.size())
+            print(hidden_states.size())
             resized_features1 = self.feature_resizer1(hidden_states.view(-1, self.padding_sec_w * 1, 512))
             resized_features1 = resized_features1.view(-1, 512 * self.conv_h_count)
             resize_tensors.append(resized_features1)

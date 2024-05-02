@@ -11,29 +11,43 @@ from ray.train.lightning import (
     RayTrainReportCallback,
     prepare_trainer,
 )
+from lightning.pytorch.loggers import TensorBoardLogger
 
 from config.constants import ROOT_DIR, PADDING_SEC
 from data_controller.load_data import load_data
 from train.lighting_model import LitModule
-from data_controller.emotion_dataset import EmotionSpectrogramDataset
+from data_controller.emotion_dataset import EmotionSpectrogramDataset, EmotionDataset
+
+
+def dataset_choice(config):
+    if config['learn_params'].get('padding_sec'):
+        return EmotionDataset
+    elif config['learn_params'].get('spectrogram_size'):
+        return EmotionSpectrogramDataset
 
 
 def train_func(
         config,
-        tuning=False,
-        enable_tune_features=False,
-        saved_checkpoint: str | None = None
+        # tuning=False,
+        # enable_tune_features=False,
+        # saved_checkpoint: str | None = None
 ):
     train_dataloader, val_dataloader, dataset = load_data(
-        bath_size=config["batch_size"],
-        num_workers=config["num_workers"],
-        dataset_class=EmotionSpectrogramDataset,
+        bath_size=config['learn_params']["batch_size"],
+        num_workers=config["load_dataset_workers_num"],
+        dataset_class=dataset_choice(config),
+        padding_sec=config['learn_params']['padding_sec']
     )
+
+    tune = tuning = config.get("tune", False)
+    enable_tune_features = tune and config['tune'].get("enable_tune_features", False)
+    saved_checkpoint = (config['saving_data_params']['start_from_saved_checkpoint_path']
+                        and join(*config['saving_data_params']['start_from_saved_checkpoint_path']))
 
     checkpoint_callback = ModelCheckpoint(
         **dict(
-            dirpath=join(ROOT_DIR, "weights", 'checkpoints', datetime.now().strftime("%Y%m%d-%H%M%S")),
-            filename="classifier_" + datetime.now().strftime("%Y%m%d-%H%M%S") + "_{epoch:02d}",
+            dirpath=join(*config['saving_data_params']['saved_checkpoints_path']),
+            filename=''.join(config['saving_data_params']['saved_checkpoints_filename']),
             monitor="val/acc",
             mode='max',  # 'min' if the metric should be minimized (e.g., loss), 'max' for maximization (e.g., accuracy)
 
@@ -55,17 +69,27 @@ def train_func(
         **lit_model_params
     )
 
-
+    # A
+    a_tensorboard_logger = TensorBoardLogger(
+        save_dir=join(*config['saving_data_params']['tensorboard_lr_monitors_logs_path']),
+        version=None,
+        name='lightning_logs__test'
+    )
+    # B
+    # WandbLogger(save_dir=os.getcwd())
 
     lr_monitor = LearningRateMonitor(logging_interval='epoch')
     trainer = L.Trainer(**(dict(accelerator='gpu',
                                 devices=1,
-                                max_epochs=1000,
+                                logger=a_tensorboard_logger,
+                                max_epochs=config['learn_params']['max_epoch'],
                                 callbacks=[
                                               checkpoint_callback,
                                               lr_monitor,
                                           ] + ([RayTrainReportCallback()] if tuning else []),
-                                default_root_dir=join(ROOT_DIR, 'logs')
+                                default_root_dir=join(
+                                    *config['saving_data_params']['tensorboard_lr_monitors_logs_path']
+                                )
                                 ) | (dict(
         plugins=[RayLightningEnvironment()],
         strategy=RayDDPStrategy(find_unused_parameters=True),

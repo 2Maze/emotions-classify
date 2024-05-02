@@ -1,4 +1,0 @@
-from .fn_classifier import Wav2Vec2Classifier
-from model.cnn.wav2vec_cnn_classifier import Wav2Vec2CnnClassifier
-from model.cnn.spectrogram_cnn_classifier import SpectrogramCnnClassifier
-from .transformer.transformer_classifier import TransformerClassifier

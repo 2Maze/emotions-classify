@@ -7,8 +7,19 @@ from vit_pytorch import ViT
 
 
 from metrics.confusion_matrix import CreateConfMatrix
-from model import Wav2Vec2CnnClassifier, SpectrogramCnnClassifier, TransformerClassifier
+from models import Wav2Vec2FnClassifier, Wav2Vec2CnnClassifier, SpectrogramCnnClassifier, TransformerClassifier
 from config.constants import ROOT_DIR, PADDING_SEC
+
+
+def nn_model_choice(config: dict):
+    if config['model'] == 'Wav2Vec2FnClassifier':
+        return Wav2Vec2FnClassifier
+    elif config['model'] == 'Wav2Vec2CnnClassifier':
+        return Wav2Vec2CnnClassifier
+    elif config['model'] == 'SpectrogramCnnClassifier':
+        return SpectrogramCnnClassifier
+    elif config['model'] == 'TransformerClassifier':
+        return TransformerClassifier
 
 
 class LitModule(L.LightningModule):
@@ -64,18 +75,18 @@ class LitModule(L.LightningModule):
 #             channels=1,
 # )
 
-        self.model = TransformerClassifier(
+        self.model = nn_model_choice(config)(
             num_classes,
-                dataset=dataset,
+            dataset=dataset,
             config=config,
         )
 
         self.config = config
-        self.is_tune = config["is_tune"]
+        self.is_tune = config.get("tune", False)
         self.num_classes = num_classes
 
-        self.lr = config['lr']
-        self.conv_lr = config['conv_lr']
+        self.lr = config['learn_params']['lr']['base_lr']
+        self.conv_lr = config['learn_params']['lr'].get('conv_lr', 0)
 
         self.val_loss = []
         self.val_pred = []
@@ -182,13 +193,14 @@ class LitModule(L.LightningModule):
         ],
             lr=self.lr
         )
-
-        scheduler = torch.optim.lr_scheduler.MultiStepLR(
+        lr_scheduler = {
+            'scheduler': torch.optim.lr_scheduler.MultiStepLR(
             optimizer,
             milestones=[i for i in [ 300,   650, 800]],
             gamma=0.1
-        )
-        return [optimizer], [scheduler]
+        ),
+        }
+        return [optimizer], [lr_scheduler]
 
     @staticmethod
     def getParameters(model, rec=None):
