@@ -8,3 +8,4 @@
 /configs/**/*
 !/configs/example.config.json
 !*.gitkeep
+/docker/source/**/*
