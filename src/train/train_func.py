@@ -36,19 +36,19 @@ def train_func(
         bath_size=config['learn_params']["batch_size"],
         num_workers=config["load_dataset_workers_num"],
         dataset_class=dataset_choice(config),
-        padding_sec=config['learn_params']['padding_sec']
+        padding_sec=config['learn_params'].get('padding_sec', 0)
     )
 
     tune = tuning = config.get("tune", False)
     enable_tune_features = tune and config['tune'].get("enable_tune_features", False)
-    saved_checkpoint = (config['saving_data_params']['start_from_saved_checkpoint_path']
+    saved_checkpoint = (config['saving_data_params'].get('start_from_saved_checkpoint_path', None)
                         and join(*config['saving_data_params']['start_from_saved_checkpoint_path']))
 
     checkpoint_callback = ModelCheckpoint(
         **dict(
             dirpath=join(*config['saving_data_params']['saved_checkpoints_path']),
             filename=''.join(config['saving_data_params']['saved_checkpoints_filename']),
-            monitor="val/acc",
+            monitor="val/em_acc",
             mode='max',  # 'min' if the metric should be minimized (e.g., loss), 'max' for maximization (e.g., accuracy)
 
         ) | (
@@ -61,7 +61,8 @@ def train_func(
     # print(ModelCheckpoint.dirpath)
 
     lit_model_params = dict(
-        num_classes=len(dataset.emotions),
+        emotions_count=len(dataset.emotions),
+        states_count=len(dataset.states),
         dataset=dataset,
         config=config,
     )
@@ -69,11 +70,14 @@ def train_func(
         **lit_model_params
     )
 
-    # A
+    sub_dir = None
+    if config['saving_data_params'].get('tensorboard_lr_monitors_logs_sub_dir'):
+        sub_dir = ''.join(config['saving_data_params']['tensorboard_lr_monitors_logs_sub_dir'])
     a_tensorboard_logger = TensorBoardLogger(
-        save_dir=join(*config['saving_data_params']['tensorboard_lr_monitors_logs_path']),
-        version=None,
-        name='lightning_logs__test'
+        save_dir=join(*(config['saving_data_params']['tensorboard_lr_monitors_logs_path'][:-1])),
+        version="".join(config['saving_data_params']['tensorboard_lr_monitors_logs_name']),
+        name=''.join(config['saving_data_params']['tensorboard_lr_monitors_logs_path'][-1]),
+        sub_dir=sub_dir
     )
     # B
     # WandbLogger(save_dir=os.getcwd())

@@ -26,3 +26,4 @@ vit-pytorch
 requests==2.28.1
 tensorboard==2.16.2
 protobuf==5.26.1
+tensorboardx

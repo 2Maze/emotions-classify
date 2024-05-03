@@ -11,6 +11,7 @@ from utils.cli_argparce import parse_args
 import sys
 
 def main():
+    pass
     # start_tuning()  # запустить тюнинг
     # saved_checkpoint = join(
     #     ROOT_DIR, "tmp", "tune",
@@ -18,16 +19,16 @@ def main():
     #     "TorchTrainer_55119_00068_68_batch_size=64,conv_h_count=16,conv_w_count=2,layer_1_size=1024,layer_2_size=64,lr=0.0088_2024-04-16_14-19-27",
     #     "checkpoint_000009",
     #     "checkpoint.ckpt")
-    train_func(
-        {'lr': 0.0007505403591860749, 'batch_size': 8, 'num_workers': 15, 'alpha': 0.0, 'gamma': 0.0,
-         'reduction': 'mean', 'from_logits': False, 'padding_sec': 10, 'is_tune': True, 'enable_tune_features': False,
-         'conv_lr': 0.001, 'layer_1_size': 32, 'layer_2_size': 256, 'patch_transformer_size': 64,
-         'transformer_depth': 2, 'transformer_attantion_head_count': 8}
-
-        | {'is_tune': False,
-           'enable_tune_features': False, },
-        saved_checkpoint=None
-    )
+    # train_func(
+    #     {'lr': 0.0007505403591860749, 'batch_size': 8, 'num_workers': 15, 'alpha': 0.0, 'gamma': 0.0,
+    #      'reduction': 'mean', 'from_logits': False, 'padding_sec': 10, 'is_tune': True, 'enable_tune_features': False,
+    #      'conv_lr': 0.001, 'layer_1_size': 32, 'layer_2_size': 256, 'patch_transformer_size': 64,
+    #      'transformer_depth': 2, 'transformer_attantion_head_count': 8}
+    #
+    #     | {'is_tune': False,
+    #        'enable_tune_features': False, },
+    #     saved_checkpoint=None
+    # )
     #     {
     #         'lr': 1e-3,
     #         'batch_size': 16,

@@ -23,6 +23,7 @@
           "$$ROOT_DIR$$",
           "weights",
           "checkpoints",
+          "$$MODEL_NAME$$",
           "$$DATETIME$$"
         ],
         "saved_checkpoints_filename": [
@@ -32,8 +33,13 @@
         ],
         "tensorboard_lr_monitors_logs_path": [
           "$$ROOT_DIR$$",
-          "logs"
+          "logs",
+          "$$MODEL_NAME$$"
         ],
+         "tensorboard_lr_monitors_logs_name": [
+          "$$DATETIME$$"
+        ],
+        "tensorboard_lr_monitors_logs_sub_dir": null,
         "start_from_saved_checkpoint_path": [
           "$$ROOT_DIR$$",
           "tmp",
@@ -59,6 +65,7 @@
           "$$ROOT_DIR$$",
           "weights",
           "checkpoints",
+          "$$MODEL_NAME$$",
           "$$DATETIME$$"
         ],
         "saved_checkpoints_filename": [
@@ -68,8 +75,13 @@
         ],
         "tensorboard_lr_monitors_logs_path": [
           "$$ROOT_DIR$$",
-          "logs"
+          "logs",
+          "$$MODEL_NAME$$"
         ],
+         "tensorboard_lr_monitors_logs_name": [
+          "$$DATETIME$$"
+        ],
+        "tensorboard_lr_monitors_logs_sub_dir": null,
         "start_from_saved_checkpoint_path": null
       }
     },
@@ -90,6 +102,7 @@
           "$$ROOT_DIR$$",
           "weights",
           "checkpoints",
+          "$$MODEL_NAME$$",
           "$$DATETIME$$"
         ],
         "saved_checkpoints_filename": [
@@ -99,8 +112,13 @@
         ],
         "tensorboard_lr_monitors_logs_path": [
           "$$ROOT_DIR$$",
-          "logs"
+          "logs",
+          "$$MODEL_NAME$$"
         ],
+         "tensorboard_lr_monitors_logs_name": [
+          "$$DATETIME$$"
+        ],
+        "tensorboard_lr_monitors_logs_sub_dir": null,
         "start_from_saved_checkpoint_path": null
       }
     },
@@ -127,6 +145,7 @@
           "$$ROOT_DIR$$",
           "weights",
           "checkpoints",
+          "$$MODEL_NAME$$",
           "$$DATETIME$$"
         ],
         "saved_checkpoints_filename": [
@@ -136,8 +155,13 @@
         ],
         "tensorboard_lr_monitors_logs_path": [
           "$$ROOT_DIR$$",
-          "logs"
+          "logs",
+          "$$MODEL_NAME$$"
         ],
+         "tensorboard_lr_monitors_logs_name": [
+          "$$DATETIME$$"
+        ],
+        "tensorboard_lr_monitors_logs_sub_dir": null,
         "start_from_saved_checkpoint_path": null
       }
     },
@@ -164,6 +188,7 @@
           "$$ROOT_DIR$$",
           "weights",
           "checkpoints",
+          "$$MODEL_NAME$$",
           "$$DATETIME$$"
         ],
         "saved_checkpoints_filename": [
@@ -173,8 +198,13 @@
         ],
         "tensorboard_lr_monitors_logs_path": [
           "$$ROOT_DIR$$",
-          "logs"
+          "logs",
+          "$$MODEL_NAME$$"
         ],
+         "tensorboard_lr_monitors_logs_name": [
+          "$$DATETIME$$"
+        ],
+        "tensorboard_lr_monitors_logs_sub_dir": "version_${version}",
         "tune_results_path": [
           "$$ROOT_DIR$$",
           "tmp",
@@ -188,7 +218,7 @@
           "$$ROOT_DIR$$",
           "tmp",
           "ray",
-          "session"
+          "$$MODEL_NAME$$"
         ]
       },
       "tune": {
@@ -214,6 +244,7 @@
           "$$ROOT_DIR$$",
           "weights",
           "checkpoints",
+          "$$MODEL_NAME$$",
           "$$DATETIME$$"
         ],
         "saved_checkpoints_filename": [
@@ -223,8 +254,13 @@
         ],
         "tensorboard_lr_monitors_logs_path": [
           "$$ROOT_DIR$$",
-          "logs"
+          "logs",
+          "$$MODEL_NAME$$"
         ],
+         "tensorboard_lr_monitors_logs_name": [
+          "$$DATETIME$$"
+        ],
+        "tensorboard_lr_monitors_logs_sub_dir": "version_${version}",
         "tune_results_path": [
           "$$ROOT_DIR$$",
           "tmp",
@@ -238,7 +274,7 @@
           "$$ROOT_DIR$$",
           "tmp",
           "ray",
-          "session"
+          "$$MODEL_NAME$$"
         ]
       },
       "tune": {
@@ -264,6 +300,7 @@
           "$$ROOT_DIR$$",
           "weights",
           "checkpoints",
+          "$$MODEL_NAME$$",
           "$$DATETIME$$"
         ],
         "saved_checkpoints_filename": [
@@ -273,8 +310,13 @@
         ],
         "tensorboard_lr_monitors_logs_path": [
           "$$ROOT_DIR$$",
-          "logs"
+          "logs",
+          "$$MODEL_NAME$$"
         ],
+         "tensorboard_lr_monitors_logs_name": [
+          "$$DATETIME$$"
+        ],
+        "tensorboard_lr_monitors_logs_sub_dir": "version_${version}",
         "tune_results_path": [
           "$$ROOT_DIR$$",
           "tmp",
@@ -288,7 +330,7 @@
           "$$ROOT_DIR$$",
           "tmp",
           "ray",
-          "session"
+          "$$MODEL_NAME$$"
         ]
       },
       "tune": {
@@ -320,6 +362,7 @@
           "$$ROOT_DIR$$",
           "weights",
           "checkpoints",
+          "$$MODEL_NAME$$",
           "$$DATETIME$$"
         ],
         "saved_checkpoints_filename": [
@@ -329,7 +372,14 @@
         ],
         "tensorboard_lr_monitors_logs_path": [
           "$$ROOT_DIR$$",
-          "logs"
+          "logs",
+          "$$MODEL_NAME$$"
+        ],
+         "tensorboard_lr_monitors_logs_name": [
+          "$$DATETIME$$"
+        ],
+        "tensorboard_lr_monitors_logs_sub_dir": [
+          "version_${version}"
         ],
         "tune_results_path": [
           "$$ROOT_DIR$$",
@@ -344,7 +394,7 @@
           "$$ROOT_DIR$$",
           "tmp",
           "ray",
-          "session"
+          "$$MODEL_NAME$$"
         ]
       },
       "tune": {

@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import torchmetrics
 import torch
 from vit_pytorch import ViT
-
+from torch import Tensor
 
 from metrics.confusion_matrix import CreateConfMatrix
 from models import Wav2Vec2FnClassifier, Wav2Vec2CnnClassifier, SpectrogramCnnClassifier, TransformerClassifier
@@ -25,7 +25,8 @@ def nn_model_choice(config: dict):
 class LitModule(L.LightningModule):
     def __init__(
             self,
-            num_classes: int,
+            emotions_count: int,
+            states_count: int,
             # learning_rate: float = 1e-3,
             # conv_learning_rate: float = 1e-3,
             # conv_h_count: int = 0,
@@ -76,30 +77,44 @@ class LitModule(L.LightningModule):
 # )
 
         self.model = nn_model_choice(config)(
-            num_classes,
+            emotions_count,
+            states_count,
             dataset=dataset,
             config=config,
         )
 
         self.config = config
         self.is_tune = config.get("tune", False)
-        self.num_classes = num_classes
+        self.emotions_count = emotions_count
 
         self.lr = config['learn_params']['lr']['base_lr']
         self.conv_lr = config['learn_params']['lr'].get('conv_lr', 0)
 
         self.val_loss = []
+        self.st_val_loss = []
+
         self.val_pred = []
         self.val_y_true = []
+        self.val_pred_st = []
+        self.val_y_true_st = []
+
         self.train_y_pred = []
         self.train_y_true = []
-        self.acc = torchmetrics.classification.Accuracy(task='multiclass', num_classes=num_classes)
-        self.f1 = torchmetrics.classification.F1Score(task='multiclass', num_classes=num_classes)
-        self.confusion_matrix = CreateConfMatrix(num_classes, list(dataset.emotions), self.logger)
+        self.train_y_pred_st = []
+        self.train_y_true_st = []
+
+        self.acc = torchmetrics.classification.Accuracy(task='multiclass', num_classes=emotions_count)
+        self.f1 = torchmetrics.classification.F1Score(task='multiclass', num_classes=emotions_count)
+
+        self.st_acc = torchmetrics.classification.Accuracy(task='multiclass', num_classes=states_count)
+        self.st_f1 = torchmetrics.classification.F1Score(task='multiclass', num_classes=states_count)
+
+        self.emotion_confusion_matrix = CreateConfMatrix(emotions_count, list(dataset.emotions), self.logger)
+        self.states_confusion_matrix = CreateConfMatrix(states_count, list(dataset.states), self.logger)
 
         self.class_weights = []
         class_counts = np.bincount([i['emotion'] for i in dataset])
-        num_classes = len(class_counts)
+        emotions_count = len(class_counts)
         total_samples = len(dataset)
         for count in class_counts:
             # print(count,  total_samples)
@@ -128,62 +143,115 @@ class LitModule(L.LightningModule):
 
     def training_step(self, batch, batch_idx):
         outputs = self.forward(batch['array'])
-        ce_loss = F.cross_entropy(outputs, batch['emotion'])
-        # tfa.losses.SigmoidFocalCrossEntropy()
-        if self.focal_loss is not None:
-            loss = self.focal_loss(outputs, batch['emotion'])
-        else:
-            loss = ce_loss
-        self.log('train/ce_loss', ce_loss, on_step=True, on_epoch=False)
-        self.log('train/focal_loss', loss, on_step=True, on_epoch=False)
-        if self.is_tune is False:
-            self.train_y_pred.append(outputs)
-            self.train_y_true.append(batch['emotion'])
+        # print("training_step", outputs)
 
-        return loss
+        if isinstance(outputs, Tensor):
+            emotion_outputs = outputs
+            state_outputs = Tensor([])
+        else:
+            emotion_outputs = outputs[0]
+            state_outputs = outputs[1]
+
+
+        emotion_ce_loss = F.cross_entropy(emotion_outputs, batch['emotion'])
+        state_ce_loss = F.cross_entropy(state_outputs, batch['state'])
+
+        main_loss = emotion_ce_loss + state_ce_loss
+        # if self.focal_loss is not None:
+        #     loss = self.focal_loss(emotion_outputs, batch['emotion'])
+        # else:
+        #     loss = emotion_ce_loss
+        self.log('train/ce_em_loss', emotion_ce_loss, on_step=True, on_epoch=False)
+        self.log('train/ce_st_loss', state_ce_loss, on_step=True, on_epoch=False)
+        # self.log('train/focal_loss', loss, on_step=True, on_epoch=False)
+        if self.is_tune is False:
+            self.train_y_pred.append(emotion_outputs)
+            self.train_y_true.append(batch['emotion'])
+            self.train_y_pred_st.append(state_outputs)
+            self.train_y_true_st.append(batch['state'])
+
+        return main_loss
 
     def on_train_epoch_end(self):
         if self.is_tune is False:
+
             preds = torch.cat([i for i in self.train_y_pred])
             targets = torch.cat([i for i in self.train_y_true])
+            preds_st = torch.cat([i for i in self.train_y_pred_st])
+            targets_st = torch.cat([i for i in self.train_y_true_st])
 
-            self.confusion_matrix.draw_confusion_matrix(preds, targets, self.current_epoch, self.logger,
-                                                        "train/Confusion matrix")
+            self.emotion_confusion_matrix.draw_confusion_matrix(preds, targets, self.current_epoch, self.logger,
+                                                        "train/emotion Confusion matrix")
+            self.states_confusion_matrix.draw_confusion_matrix(preds_st, targets_st, self.current_epoch, self.logger,
+                                                                "train/state Confusion matrix")
 
             self.train_y_pred = []
             self.train_y_true = []
+            self.train_y_pred_st = []
+            self.train_y_true_st = []
 
     def validation_step(self, batch, batch_idx):
         outputs = self.forward(batch['array'])
-        # print("---outputs", outputs.size(), outputs.max(dim=1), batch['emotion'])
-        ce_loss = F.cross_entropy(outputs, batch['emotion'])
-        # print("ce_loss", ce_loss)
-        if self.focal_loss is not None:
-            loss = self.focal_loss(outputs, batch['emotion'])
+        # print("validation_step", outputs)
+
+        if isinstance(outputs, Tensor):
+            emotion_outputs = outputs
+            state_outputs = Tensor([])
         else:
-            loss = ce_loss
+            emotion_outputs = outputs[0]
+            state_outputs = outputs[1]
 
-        self.val_loss.append(loss.item())
+
+        emotion_ce_loss = F.cross_entropy(emotion_outputs, batch['emotion'])
+        state_ce_loss = F.cross_entropy(state_outputs, batch['state'])
+
+        self.val_loss.append(emotion_ce_loss.item())
+        self.st_val_loss.append(state_ce_loss.item())
         if self.is_tune is False:
-            self.val_pred.append(outputs)
+            self.val_pred.append(emotion_outputs)
             self.val_y_true.append(batch['emotion'])
+            self.val_pred_st.append(state_outputs)
+            self.val_y_true_st.append(batch['state'])
 
-        self.log('val/acc', self.acc(outputs, batch['emotion']), on_step=False, on_epoch=True)
-        self.log('val/f1', self.f1(outputs, batch['emotion']), on_step=False, on_epoch=True)
-        self.log('val/ce_loss', ce_loss, on_step=True, on_epoch=False)
-        self.log('val/focal_loss', loss, on_step=True, on_epoch=False)
-        return {'loss': loss, 'preds': outputs, 'target': batch['emotion']}
+
+        main_loss = emotion_ce_loss + state_ce_loss
+
+        self.log('val/em_acc', self.acc(emotion_outputs, batch['emotion']), on_step=False, on_epoch=True)
+        self.log('val/em_f1', self.f1(emotion_outputs, batch['emotion']), on_step=False, on_epoch=True)
+        self.log('val/ce_em_loss', emotion_ce_loss, on_step=True, on_epoch=False)
+
+        self.log('val/st_acc', self.st_acc(state_outputs, batch['state']), on_step=False, on_epoch=True)
+        self.log('val/st_f1', self.st_f1(state_outputs, batch['state']), on_step=False, on_epoch=True)
+        self.log('val/ce_st_loss', state_ce_loss, on_step=True, on_epoch=False)
+        # self.log('val/focal_loss', loss, on_step=True, on_epoch=False)
+        return {
+            'loss': main_loss,
+            'em_loss': emotion_ce_loss, "st_loss": state_ce_loss,
+            'em_preds': emotion_outputs, 'em_target': batch['emotion'],
+            'st_preds': state_outputs, 'st_target': batch['state'],
+        }
 
     def on_validation_epoch_end(self):
-        self.log('val/mean_focal_loss', np.array(self.val_loss).mean())
+        self.log('val/mean_em_loss', np.array(self.val_loss).mean())
+        self.log('val/mean_st_loss', np.array(self.st_val_loss).mean())
         self.val_loss = []
+        self.st_val_loss = []
         if self.is_tune is False:
+
             preds = torch.cat([i for i in self.val_pred])
             targets = torch.cat([i for i in self.val_y_true])
-            self.confusion_matrix.draw_confusion_matrix(preds, targets, self.current_epoch, self.logger,
-                                                        "val/Confusion matrix")
+            st_preds = torch.cat([i for i in self.val_pred_st])
+            st_targets = torch.cat([i for i in self.val_y_true_st])
+
+            self.emotion_confusion_matrix.draw_confusion_matrix(preds, targets, self.current_epoch, self.logger,
+                                                        "val/emotion Confusion matrix")
+            self.states_confusion_matrix.draw_confusion_matrix(st_preds, st_targets, self.current_epoch, self.logger,
+                                                                "val/state Confusion matrix")
+
             self.val_pred = []
             self.val_y_true = []
+            self.val_pred_st = []
+            self.val_y_true_st = []
 
     def configure_optimizers(self):
         all_params = list(self.parameters())

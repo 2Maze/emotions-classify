@@ -8,6 +8,7 @@ from ray import tune
 from ray.air import ScalingConfig, RunConfig, CheckpointConfig
 from ray.train.torch import TorchTrainer
 from ray.tune.schedulers import ASHAScheduler
+import ray
 
 from config.constants import ROOT_DIR
 from train.callbacks.delete_checkpoint import DeleteCallback
@@ -20,8 +21,8 @@ def tune_wapper_of_train_func(config):
     tune.utils.wait_for_gpu()
     try:
         result = train_func(
-            config,
-            tuning=True,
+            config
+            # tuning=True,
         )
     except Exception as e:
         print("some error win train", e, traceback.format_exc())
@@ -86,13 +87,13 @@ def start_tuning(config):
 
     search_space = {
         "model_architecture": {
-            "conv_h_count":  tune.choice([0, 1, 2, 4, 8, 16]),
-            "conv_w_count":  tune.choice([0, 1, 2, 4, 8, 16]),
+            "conv_h_count":  tune.choice([0, 1, 2, 4]),
+            "conv_w_count":  tune.choice([0, 1, 2, 4]),
             "layer_1_size": tune.choice([32, 64, 128, 256, 512, ]),
             "layer_2_size": tune.choice([32, 64, 128, 256, 512, ]),
-            "patch_transformer_size": tune.choice([2 ** i for i in range(2, 7)]),
-            "transformer_depth": tune.choice(list(range(2, 10))),
-            'transformer_attantion_head_count': tune.choice(list(range(2, 24, 2))),
+            "patch_transformer_size": tune.choice([2 ** i for i in range(4, 7)]),
+            "transformer_depth": tune.choice(list(range(2, 6))),
+            'transformer_attantion_head_count': tune.choice(list(range(2, 16, 2))),
         },
         "learn_params": {
             "lr": {
@@ -112,7 +113,7 @@ def start_tuning(config):
     # scheduler = ASHAScheduler(max_t=num_epochs, grace_period=1, reduction_factor=2)
 
     scaling_config = ScalingConfig(
-        num_workers=config['load_dataset_workers_num'],
+        num_workers=1,
         use_gpu=True,
         resources_per_worker={"CPU": 1, "GPU": 1}
     )
@@ -145,14 +146,14 @@ def start_tuning(config):
     # )
     scheduler = ASHAScheduler(max_t=num_epochs, grace_period=1, reduction_factor=2)
 
-    ray.init(_temp_dir=join(config['saving_data_params']['tune_session_path']))
+    ray.init(_temp_dir=join(*config['saving_data_params']['tune_session_path']))
     tuner = tune.Tuner(
         ray_trainer,
         param_space={"train_loop_config": search_space},
         tune_config=tune.TuneConfig(
             metric="val/acc",
             mode="max",
-            num_samples=max_epoch,
+            num_samples=num_samples,
             scheduler=scheduler,
         ),
     )

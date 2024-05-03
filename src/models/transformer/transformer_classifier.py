@@ -19,28 +19,28 @@ class TransformerClassifier(nn.Module):
 
     def __init__(
             self,
-            num_classes,
+            emotions_count,
+            states_count,
             # padding_sec,
             config: dict | None = None,
             dataset=None,
             **k_,
     ):
         super(TransformerClassifier, self).__init__()
-        self.padding_sec = config['padding_sec']
-        self.padding_sec_w = 50 *  self.padding_sec - 1
 
         self.config = config
 
         self.layer_1_size = config['model_architecture']['layer_1_size']
         self.layer_2_size = config['model_architecture']['layer_2_size']
         self.spectrogram_size = config['learn_params']['spectrogram_size']
-
+        self.emotions_count = emotions_count
+        self.states_count = states_count
         # https://github.com/lucidrains/vit-pytorch?tab=readme-ov-file#usage
         self.model = ViT(
             # transformer=efficient_transformer,
             image_size=self.spectrogram_size,
             patch_size=config['model_architecture']['patch_transformer_size'],
-            num_classes=num_classes,
+            num_classes=emotions_count + states_count,
             dim=config['model_architecture']['layer_1_size'],
             depth=config['model_architecture']['transformer_depth'],
             heads=config['model_architecture']["transformer_attantion_head_count"],
@@ -97,4 +97,4 @@ class TransformerClassifier(nn.Module):
         inputs = self.model(X.view(-1, 1, self.spectrogram_size, self.spectrogram_size))
         # logits = self.classifier(inputs)
         # logits = torch.softmax(inputs, dim=1)
-        return inputs
+        return inputs[:, :self.emotions_count], inputs[:, self.emotions_count:]

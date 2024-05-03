@@ -16,7 +16,8 @@ class Wav2Vec2CnnClassifier(nn.Module):
 
     def __init__(
             self,
-            num_classes,
+            emotions_count,
+            states_count,
             # padding_sec,
             config: dict | None = None,
             dataset=None,
@@ -43,7 +44,10 @@ class Wav2Vec2CnnClassifier(nn.Module):
 
         self.efficientnet_model.features[0][0] = nn.Conv2d(1, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1),
                                                            bias=False)
-        self.efficientnet_model.classifier[-1] = nn.Linear(in_features=1280, out_features=num_classes, bias=True)
+        self.efficientnet_model.classifier[-1] = nn.Sequential([])
+
+        self.emotion_classifier = nn.Linear(in_features=1280, out_features=emotions_count, bias=True)
+        self.state_classifier = nn.Linear(in_features=1280, out_features=states_count, bias=True)
 
         for param in self.embedding_model.wav2vec2.parameters():
             param.requires_grad = False
@@ -58,8 +62,14 @@ class Wav2Vec2CnnClassifier(nn.Module):
     ):
         features = self.get_embeddings(X, mask_time_indices=mask_time_indices, attention_mask=attention_mask)
         logits = self.classifier(features.view(-1, 1, 249, 512))
-        logits = torch.softmax(logits, dim=1)
-        return logits
+
+        em_logits = self.emotion_classifier(logits)
+        em_logits = torch.softmax(em_logits, dim=1)
+
+        st_logits = self.state_classifier(logits)
+        st_logits = torch.softmax(st_logits, dim=1)
+
+        return em_logits, st_logits
 
     def get_embeddings(
             self,

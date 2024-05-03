@@ -15,7 +15,8 @@
 1. Copy [entrypoint.d](https://gitlab.com/nvidia/container-images/cuda/-/tree/master/entrypoint.d) to `<project_root>/docker/source`
 2. Copy [NGC-DL-CONTAINER-LICENSE](https://gitlab.com/nvidia/container-images/cuda/-/blob/master/NGC-DL-CONTAINER-LICENSE) to `<project_root>/docker/source`
 3. Copy [nvidia_entrypoint.sh](https://gitlab.com/nvidia/container-images/cuda/-/blob/master/nvidia_entrypoint.sh) to `<project_root>/docker/source`
-4. Run from `project_root` directory
+4. (Optional) Enable `docker` [Buildkit](https://docs.docker.com/build/buildkit/#:~:text=To%20use%20Docker%20BuildKit%20by,the%20following%20to%20the%20file)
+5. Run from `project_root` directory
 ```bash
 docker build -f  ./docker/ighting.Dockerfile --build-arg REQUIREMENTS_FILE=cu_12_2.txt . -t daniinxorchenabo/emotions-classify-env:lighting-cu122-latest
 ```
@@ -198,7 +199,8 @@ _Установка значения `null` помечает параметр д
 * `pipeline`.`saving_data_params` - Пути для сохранения конфигов, логов и так далее. Используется только в `pipeline`.`type`=`train` и `pipeline`.`type`=`tune`.
 * `pipeline`.`saving_data_params`.`saved_checkpoints_path` - Путь для сохранения весов нейросетей. Имеет значение только для `pipeline`.`type`=`train`. Значение является массивом из названий папок.
 * `pipeline`.`saving_data_params`.`saved_checkpoints_filename` - Шаблон имени файла весов нейросетей. Имеет значение только для `pipeline`.`type`=`train`. Значение явялется массивом, который конкатенируется в строку.
-* `pipeline`.`saving_data_params`.`tensorboard_lr_monitors_logs_path` - Путь для сохранения логов обучения? rjnjhst визуализируются при помощи `tensorboard`. Значение является массивом из названий папок.
+* `pipeline`.`saving_data_params`.`tensorboard_lr_monitors_logs_path` - Путь для сохранения логов обучения, которые визуализируются при помощи `tensorboard`. Значение является массивом из названий папок.
+* `pipeline`.`saving_data_params`.`tensorboard_lr_monitors_logs_name` - Имя сохранённого лога, по умолчанию равно `version_${version}`. Значение явялется массивом, который конкатенируется в строку.
 * `pipeline`.`saving_data_params`.`start_from_saved_checkpoint_path` - Путь, по которому расположены сохранённые веса, для того, чтобы продолжить обучение именно с них.
   * Если установленно `null`, то обучение будет производиться с начсала.
   * Если значение - массив из названий папок, то обучение будет происходить с чекпоинта, указанного в этом массиве.

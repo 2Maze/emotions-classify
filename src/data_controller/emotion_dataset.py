@@ -9,6 +9,7 @@ import torchaudio
 from torch.utils.data import Dataset
 
 EMOTIONS = ['гнев', 'нейтраль', 'отвращение', 'печаль', 'радость', 'страх', 'удивление']
+EMOTIONS.remove('отвращение')
 STATES = ['нейтральное', 'отрицательное', 'положительное']
 SAMPLING_RATE = 16_000
 
@@ -72,9 +73,9 @@ class EmotionSpectrogramDataset(EmotionDataset):
             **kwargs
     ):
         super().__init__(*args, **kwargs)
-        self.spectrogram_transform = torchaudio.transforms.Spectrogram(n_fft=fit)
         self.spectrogram_size = spectrogram_size
         self.fit = ( spectrogram_size * 2 - 2)
+        self.spectrogram_transform = torchaudio.transforms.Spectrogram(n_fft=self.fit)
 
     def __getitem__(self, idx):
         key = self.annotation_files[idx]
