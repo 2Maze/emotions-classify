@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TypedDict, TypeVar
+from typing import TypedDict, TypeVar, Literal
 from typing_extensions import Unpack
 
 
@@ -16,7 +16,7 @@ NN_MODEL = TypeVar(
 )
 
 class BaseUnarConfig(TypedDict):
-    type: Literal['train'] | Literal['tune'] |  Literal['print_tune_res'],
+    type: Literal['train'] | Literal['tune'] |  Literal['print_tune_res']
 
     model_architecture: None
     learn_params: None

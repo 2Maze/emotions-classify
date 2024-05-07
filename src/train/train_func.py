@@ -73,10 +73,13 @@ def train_func(
     sub_dir = None
     if config['saving_data_params'].get('tensorboard_lr_monitors_logs_sub_dir'):
         sub_dir = ''.join(config['saving_data_params']['tensorboard_lr_monitors_logs_sub_dir'])
+    version_dir = None
+    if config['saving_data_params'].get('tensorboard_lr_monitors_logs_version'):
+        version_dir = ''.join(config['saving_data_params']['tensorboard_lr_monitors_logs_version'])
     a_tensorboard_logger = TensorBoardLogger(
-        save_dir=join(*(config['saving_data_params']['tensorboard_lr_monitors_logs_path'][:-1])),
-        version="".join(config['saving_data_params']['tensorboard_lr_monitors_logs_name']),
-        name=''.join(config['saving_data_params']['tensorboard_lr_monitors_logs_path'][-1]),
+        save_dir=join(*(config['saving_data_params']['tensorboard_lr_monitors_logs_path'])),
+        version=version_dir,
+        name=''.join(config['saving_data_params']['tensorboard_lr_monitors_logs_name']),
         sub_dir=sub_dir
     )
     # B

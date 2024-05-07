@@ -92,8 +92,8 @@ def start_tuning(config):
             "layer_1_size": tune.choice([32, 64, 128, 256, 512, ]),
             "layer_2_size": tune.choice([32, 64, 128, 256, 512, ]),
             "patch_transformer_size": tune.choice([2 ** i for i in range(4, 7)]),
-            "transformer_depth": tune.choice(list(range(2, 6))),
-            'transformer_attantion_head_count': tune.choice(list(range(2, 16, 2))),
+            "transformer_depth": tune.choice(list(range(2, 5))),
+            'transformer_attantion_head_count': tune.choice(list(range(1, 10, 1))),
         },
         "learn_params": {
             "lr": {
@@ -122,7 +122,7 @@ def start_tuning(config):
         name=exp_name,
         checkpoint_config=CheckpointConfig(
             num_to_keep=1,
-            checkpoint_score_attribute="val/acc",
+            checkpoint_score_attribute="val/em_acc",
             checkpoint_score_order="max",
         ),
         storage_path=storage_path,
@@ -151,7 +151,7 @@ def start_tuning(config):
         ray_trainer,
         param_space={"train_loop_config": search_space},
         tune_config=tune.TuneConfig(
-            metric="val/acc",
+            metric="val/em_acc",
             mode="max",
             num_samples=num_samples,
             scheduler=scheduler,

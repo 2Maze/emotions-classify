@@ -24,7 +24,7 @@ class DeleteCallback(Callback):
         last_result = trial.last_result
         # Filter out which checkpoints to delete on trial completion
         print("___deleting checkpoint", last_result, trial, trial.path, trial.local_path)
-        if True and last_result["val/acc"] < self.acc_delete_limit:
+        if True and last_result["val/em_acc"] < self.acc_delete_limit:
             try:
                 tune_root_dir, curr_dir = split(trial.path)
                 curr_tune_num = self.get_train_num_from_dir(trial.path)
@@ -47,9 +47,9 @@ class DeleteCallback(Callback):
                     results_dir = join(one_tune_iteration_dir, "result.json")
                     with open(results_dir, "r") as f:
                         results = [i['checkpoint_dir_name'] for i in (json.loads(i) for i in f.readlines()) if
-                                   i['val/acc'] > self.acc_delete_limit]
+                                   i['val/em_acc'] > self.acc_delete_limit]
                     print("one_tune_iteration_dir", one_tune_iteration_dir, checkpoint_dir, split(checkpoint_dir)[1],
-                          last_result["val/acc"])
+                          last_result["val/em_acc"])
                     if split(checkpoint_dir)[1] not in results:
                         print("deleting", join(one_tune_iteration_dir, checkpoint_dir))
                         shutil.rmtree(join(one_tune_iteration_dir, checkpoint_dir))

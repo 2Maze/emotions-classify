@@ -28,7 +28,7 @@ class Wav2Vec2Classifier(nn.Module):
         super(Wav2Vec2Classifier, self).__init__()
         self.padding_sec = config['learn_params']['padding_sec']
         self.padding_sec_w = 50 * self.padding_sec - 1
-        self.hidden_neural_conut = 768  # 512  # 768
+        self.hidden_neural_conut = 512  # 512  # 768
 
         self.conv_h_count = config['model_architecture']['conv_h_count']
         self.conv_w_count = config['model_architecture']['conv_w_count']
@@ -91,8 +91,8 @@ class Wav2Vec2Classifier(nn.Module):
 
         self.classifier = nn.Sequential(
             nn.Linear(
-                self.padding_sec_w * (0 + self.conv_w_count)
-                + self.hidden_neural_conut * (1 + self.conv_h_count),
+                self.padding_sec_w * (1 + self.conv_w_count)
+                + self.hidden_neural_conut * (0 + self.conv_h_count),
                 1 * self.layer_1_size,
                 bias=True
             ),
@@ -166,7 +166,7 @@ class Wav2Vec2Classifier(nn.Module):
         )
         # hidden_states = self.embedding_model.wav2vec2(input_values).extract_features
         print("hidden_states", hidden_states.size())
-        # hidden_states = self.feature_post_projection(hidden_states)
+        hidden_states = self.feature_post_projection(hidden_states)
 
 
 
@@ -187,10 +187,11 @@ class Wav2Vec2Classifier(nn.Module):
 
         # resized_features = resized_features2
         # resized_features = hidden_states.mean(axis=1)
-        resized_features = torch.cat(
-            (hidden_states.mean(axis=1),
-             # hidden_states.mean(axis=2),
-             *resize_tensors), 1)
+        resized_features = torch.cat((
+                hidden_states.mean(axis=1),
+             hidden_states.mean(axis=2),
+             *resize_tensors
+        ), 1)
         resized_features = nn.functional.normalize(resized_features)
 
         # res_ =

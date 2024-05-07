@@ -18,14 +18,14 @@ def check_tuning_res(tune_dir):
         with open(results_dir, "r") as f:
             results.append(
                 max([i for i in
-                     (json.loads(i) for i in f.readlines()) ] + [{'val/acc': -1}],
-                    key=lambda x: x['val/acc'])
+                     (json.loads(i) for i in f.readlines()) ] + [{'val/em_acc': -1}],
+                    key=lambda x: x['val/em_acc'])
             )
             # print(results[-1])
-    results.sort(key=lambda x: x['val/acc'], reverse=True)
+    results.sort(key=lambda x: x['val/em_acc'], reverse=True)
     print(*[
         {
-            "acc": i['val/acc'],
+            "acc": i['val/em_acc'],
             "epoch": i['epoch'],
             "id": i['trial_id']
         } | i['config']['train_loop_config']
