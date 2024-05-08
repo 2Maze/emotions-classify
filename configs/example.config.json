@@ -33,10 +33,12 @@
         ],
         "tensorboard_lr_monitors_logs_path": [
           "$$ROOT_DIR$$",
-          "logs",
+          "logs"
+        ],
+        "tensorboard_lr_monitors_logs_name": [
           "$$MODEL_NAME$$"
         ],
-         "tensorboard_lr_monitors_logs_name": [
+        "tensorboard_lr_monitors_logs_version": [
           "$$DATETIME$$"
         ],
         "tensorboard_lr_monitors_logs_sub_dir": null,
@@ -75,10 +77,12 @@
         ],
         "tensorboard_lr_monitors_logs_path": [
           "$$ROOT_DIR$$",
-          "logs",
+          "logs"
+        ],
+        "tensorboard_lr_monitors_logs_name": [
           "$$MODEL_NAME$$"
         ],
-         "tensorboard_lr_monitors_logs_name": [
+        "tensorboard_lr_monitors_logs_version": [
           "$$DATETIME$$"
         ],
         "tensorboard_lr_monitors_logs_sub_dir": null,
@@ -112,10 +116,12 @@
         ],
         "tensorboard_lr_monitors_logs_path": [
           "$$ROOT_DIR$$",
-          "logs",
+          "logs"
+        ],
+        "tensorboard_lr_monitors_logs_name": [
           "$$MODEL_NAME$$"
         ],
-         "tensorboard_lr_monitors_logs_name": [
+        "tensorboard_lr_monitors_logs_version": [
           "$$DATETIME$$"
         ],
         "tensorboard_lr_monitors_logs_sub_dir": null,
@@ -155,10 +161,12 @@
         ],
         "tensorboard_lr_monitors_logs_path": [
           "$$ROOT_DIR$$",
-          "logs",
+          "logs"
+        ],
+        "tensorboard_lr_monitors_logs_name": [
           "$$MODEL_NAME$$"
         ],
-         "tensorboard_lr_monitors_logs_name": [
+        "tensorboard_lr_monitors_logs_version": [
           "$$DATETIME$$"
         ],
         "tensorboard_lr_monitors_logs_sub_dir": null,
@@ -201,14 +209,17 @@
           "logs",
           "$$MODEL_NAME$$"
         ],
-         "tensorboard_lr_monitors_logs_name": [
-          "$$DATETIME$$"
+        "tensorboard_lr_monitors_logs_name": [
+          "$$DATETIME$$",
+          "_tune"
         ],
-        "tensorboard_lr_monitors_logs_sub_dir": "version_${version}",
+        "tensorboard_lr_monitors_logs_version": null,
+        "tensorboard_lr_monitors_logs_sub_dir": null,
         "tune_results_path": [
           "$$ROOT_DIR$$",
           "tmp",
-          "tune"
+          "tune",
+          "$$MODEL_NAME$$"
         ],
         "tune_results_dir": [
           "tune_",
@@ -224,7 +235,9 @@
       "tune": {
         "enable_tune_features": false,
         "max_tune_epochs": 10,
-        "num_samples": 100
+        "num_samples": 100,
+        "checkpoints_save_threshold": 0.6,
+        "target_metric_name": "val/em_acc"
       }
     },
     {
@@ -257,14 +270,17 @@
           "logs",
           "$$MODEL_NAME$$"
         ],
-         "tensorboard_lr_monitors_logs_name": [
-          "$$DATETIME$$"
+        "tensorboard_lr_monitors_logs_name": [
+          "$$DATETIME$$",
+          "_tune"
         ],
-        "tensorboard_lr_monitors_logs_sub_dir": "version_${version}",
+        "tensorboard_lr_monitors_logs_version": null,
+        "tensorboard_lr_monitors_logs_sub_dir": null,
         "tune_results_path": [
           "$$ROOT_DIR$$",
           "tmp",
-          "tune"
+          "tune",
+          "$$MODEL_NAME$$"
         ],
         "tune_results_dir": [
           "tune_",
@@ -280,7 +296,9 @@
       "tune": {
         "enable_tune_features": false,
         "max_tune_epochs": 10,
-        "num_samples": 100
+        "num_samples": 100,
+        "checkpoints_save_threshold": 0.5,
+        "target_metric_name": "val/em_acc"
       }
     },
     {
@@ -313,14 +331,17 @@
           "logs",
           "$$MODEL_NAME$$"
         ],
-         "tensorboard_lr_monitors_logs_name": [
-          "$$DATETIME$$"
+        "tensorboard_lr_monitors_logs_name": [
+          "$$DATETIME$$",
+          "_tune"
         ],
-        "tensorboard_lr_monitors_logs_sub_dir": "version_${version}",
+        "tensorboard_lr_monitors_logs_version": null,
+        "tensorboard_lr_monitors_logs_sub_dir": null,
         "tune_results_path": [
           "$$ROOT_DIR$$",
           "tmp",
-          "tune"
+          "tune",
+          "$$MODEL_NAME$$"
         ],
         "tune_results_dir": [
           "tune_",
@@ -336,7 +357,9 @@
       "tune": {
         "enable_tune_features": false,
         "max_tune_epochs": 20,
-        "num_samples": 100
+        "num_samples": 100,
+        "checkpoints_save_threshold": 0.5,
+        "target_metric_name": "val/em_acc"
       }
     },
     {
@@ -375,16 +398,17 @@
           "logs",
           "$$MODEL_NAME$$"
         ],
-         "tensorboard_lr_monitors_logs_name": [
-          "$$DATETIME$$"
+        "tensorboard_lr_monitors_logs_name": [
+          "$$DATETIME$$",
+          "_tune"
         ],
-        "tensorboard_lr_monitors_logs_sub_dir": [
-          "version_${version}"
-        ],
+        "tensorboard_lr_monitors_logs_version": null,
+        "tensorboard_lr_monitors_logs_sub_dir": null,
         "tune_results_path": [
           "$$ROOT_DIR$$",
           "tmp",
-          "tune"
+          "tune",
+          "$$MODEL_NAME$$"
         ],
         "tune_results_dir": [
           "tune_",
@@ -400,7 +424,9 @@
       "tune": {
         "enable_tune_features": false,
         "max_tune_epochs": 20,
-        "num_samples": 100
+        "num_samples": 100,
+        "checkpoints_save_threshold": 0.4,
+        "target_metric_name": "val/em_acc"
       }
     },
     {

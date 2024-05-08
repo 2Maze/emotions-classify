@@ -126,7 +126,10 @@ def start_tuning(config):
             checkpoint_score_order="max",
         ),
         storage_path=storage_path,
-        callbacks=[DeleteCallback()],
+        callbacks=[DeleteCallback(
+            acc_delete_limit=config['tune']['checkpoints_save_threshold'],
+            target_metric=config['tune']['target_metric_name'],
+        )],
     )
 
     # Define a TorchTrainer without hyper-parameters for Tuner
@@ -159,3 +162,4 @@ def start_tuning(config):
     )
     results = tuner.fit()
     print(results)
+    ray.shutdown()
