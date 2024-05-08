@@ -199,14 +199,21 @@ _Установка значения `null` помечает параметр д
 * `pipeline`.`saving_data_params` - Пути для сохранения конфигов, логов и так далее. Используется только в `pipeline`.`type`=`train` и `pipeline`.`type`=`tune`.
 * `pipeline`.`saving_data_params`.`saved_checkpoints_path` - Путь для сохранения весов нейросетей. Имеет значение только для `pipeline`.`type`=`train`. Значение является массивом из названий папок.
 * `pipeline`.`saving_data_params`.`saved_checkpoints_filename` - Шаблон имени файла весов нейросетей. Имеет значение только для `pipeline`.`type`=`train`. Значение явялется массивом, который конкатенируется в строку.
-* `pipeline`.`saving_data_params`.`tensorboard_lr_monitors_logs_path` - Путь для сохранения логов обучения, которые визуализируются при помощи `tensorboard`. Значение является массивом из названий папок.
-* `pipeline`.`saving_data_params`.`tensorboard_lr_monitors_logs_name` - Имя сохранённого лога, по умолчанию равно `version_${version}`. Значение явялется массивом, который конкатенируется в строку.
 * `pipeline`.`saving_data_params`.`start_from_saved_checkpoint_path` - Путь, по которому расположены сохранённые веса, для того, чтобы продолжить обучение именно с них.
   * Если установленно `null`, то обучение будет производиться с начсала.
   * Если значение - массив из названий папок, то обучение будет происходить с чекпоинта, указанного в этом массиве.
 * `pipeline`.`saving_data_params`.`tune_results_path` - Путь, по которому будут сохраняться результаты тюнинга. Имеет смысл только при `pipeline`.`type`=`tune`. Значение является массивом из названий папок.
 * `pipeline`.`saving_data_params`.`tune_results_dir` - Формат названия папки, в которой будут храниться результаты тюнинга. Имеет смысл только при `pipeline`.`type`=`tune`. Значение явялется массивом, который конкатенируется в строку.
 * `pipeline`.`saving_data_params`.`tune_session_path` - Путь, по которому будут сохраняться файлы сессий тюнинга. Имеет смысл только при `pipeline`.`type`=`tune`. Значение является массивом из названий папок.
+* `pipeline`.`saving_data_params`.`tensorboard_lr_monitors_logs_path` - Путь для сохранения логов обучения, которые визуализируются при помощи `tensorboard`. Значение является массивом из названий папок.
+* `pipeline`.`saving_data_params`.`tensorboard_lr_monitors_logs_name` - Имя папки, в которую будет сохранён лог. Значение явялется массивом, который конкатенируется в строку.
+* `pipeline`.`saving_data_params`.`tensorboard_lr_monitors_logs_version` - Шаблон для имени каждого лога. Массив строк, который конкатенируется в название папки, или `null`.
+  * при `pipeline`.`type`=`train` массив строк или `null`.
+  * при `pipeline`.`type`=`tune` строго `null`. Установка другого значения приведёт к некорректному отображению логов
+* `pipeline`.`saving_data_params`.`tensorboard_lr_monitors_logs_sub_dir` - Поддиректория для логов. Массив строк, который конкатенируется в название папки, или `null`.
+  * Механизм работы не проверен, лучше не трогайте и оставьте `null`
+  * Путь к файлу с логом формируется как `tensorboard_lr_monitors_logs_path`/`tensorboard_lr_monitors_logs_name`/`tensorboard_lr_monitors_logs_version`/`tensorboard_lr_monitors_logs_sub_dir`/`log file`
+  * Или (если `tensorboard_lr_monitors_logs_sub_dir`=`null`) `tensorboard_lr_monitors_logs_path`/`tensorboard_lr_monitors_logs_name`/`tensorboard_lr_monitors_logs_version`/`log file`
 
 
 * `pipeline`.`tune` - Специфичные параметры для тюнинга.
@@ -215,6 +222,9 @@ _Установка значения `null` помечает параметр д
   * `false` - выключить
 * `pipeline`.`tune`.`max_tune_epochs` - Максимальное количество эпох для тюнинга одной конфигурации
 * `pipeline`.`tune`.`num_samples` - Количество моделей, среди которых будет производиться тюнинг
+* `pipeline`.`tune`.`checkpoints_save_threshold` - Порог целево метрики, ниже которого веса при тюнинге не буду сохранены
+* `pipeline`.`tune`.`target_metric_name` - Название метрики в логгере, по которой будет производиться тюнинг
+  * *Вероятно, вы хотите использовать`val/em_acc` или `val/st_acc`*
 
 
 * `load_dataset_workers_num` - Количество процессов для загрузки данных
