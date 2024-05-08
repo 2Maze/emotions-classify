@@ -36,7 +36,8 @@ def train_func(
         bath_size=config['learn_params']["batch_size"],
         num_workers=config["load_dataset_workers_num"],
         dataset_class=dataset_choice(config),
-        padding_sec=config['learn_params'].get('padding_sec', 0)
+        padding_sec=config['learn_params'].get('padding_sec', 0),
+        spectrogram_size=config['learn_params'].get('spectrogram_size', 0),
     )
 
     tune = tuning = config.get("tune", False)

@@ -24,8 +24,6 @@ class SpectrogramCnnClassifier(nn.Module):
             **k_,
     ):
         super(SpectrogramCnnClassifier, self).__init__()
-        self.padding_sec = config['learn_params']['padding_sec']
-        self.padding_sec_w = 50 * self.padding_sec - 1
 
         self.config = config
         self.spectrogram_size = config['learn_params']['spectrogram_size']
@@ -35,7 +33,7 @@ class SpectrogramCnnClassifier(nn.Module):
         self.efficientnet_model.features[0][0] = nn.Conv2d(1, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1),
                                                            bias=False)
 
-        self.efficientnet_model.classifier[-1] = nn.Sequential([])
+        self.efficientnet_model.classifier[-1] = nn.Sequential()
 
         self.emotion_classifier = nn.Linear(in_features=1280, out_features=emotions_count, bias=True)
         self.state_classifier = nn.Linear(in_features=1280, out_features=states_count, bias=True)
@@ -51,6 +49,7 @@ class SpectrogramCnnClassifier(nn.Module):
             attention_mask: torch.Tensor | None = None,
     ):
         # features = self.get_embeddings(X, mask_time_indices=mask_time_indices, attention_mask=attention_mask)
+        # print(X.size())
         logits = self.classifier(X.view(-1, 1, self.spectrogram_size, self.spectrogram_size))
 
         em_logits = self.emotion_classifier(logits)

@@ -44,7 +44,7 @@ class Wav2Vec2CnnClassifier(nn.Module):
 
         self.efficientnet_model.features[0][0] = nn.Conv2d(1, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1),
                                                            bias=False)
-        self.efficientnet_model.classifier[-1] = nn.Sequential([])
+        self.efficientnet_model.classifier[-1] = nn.Sequential()
 
         self.emotion_classifier = nn.Linear(in_features=1280, out_features=emotions_count, bias=True)
         self.state_classifier = nn.Linear(in_features=1280, out_features=states_count, bias=True)
