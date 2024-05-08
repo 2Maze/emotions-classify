@@ -1,6 +1,8 @@
 import json
 import os
+import traceback
 from datetime import datetime
+from os.path import join
 
 from train.train_func import train_func
 from train.tune.tune_controller import start_tuning
@@ -106,10 +108,12 @@ if __name__ == '__main__':
     # print(sys.argv)
     results = parse_args()
     print(results)
+    errors = {}
     if results.parent_param == 'train':
         with open( results.config_file, 'r') as f:
             config = json.load(f)
-            for conf in config['pipeline']:
+        for conf in config['pipeline']:
+            try:
                 conf = config_builder(conf, config)
                 if conf['type'] == 'tune':
                     start_tuning(conf)
@@ -118,7 +122,14 @@ if __name__ == '__main__':
                 elif conf['type'] == 'print_tune_res':
                     check_tuning_res(os.path.join(*conf['res_path']))
                 print(conf)
-
+            except Exception as e:
+                errors[e] = traceback.format_exc()
+                print(e),
+                print( traceback.format_exc())
+                raise e from e
+        print(*[f"{k}:::\n{v}" for k, v in errors.items()] ,sep='\n\n\n')
+        with open( join(ROOT_DIR, "logs", 'errors', f'error_{datetime.now().strftime("%Y%m%d-%H%M%S")}.log'), 'w') as f:
+            print(*[f"{k}:::\n{v}" for k, v in errors.items()], sep='\n\n\n', file=f)
 
     # check_tuning_res('tune_analyzing_results_20240425-101338')
     # main()
