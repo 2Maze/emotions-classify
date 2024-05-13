@@ -33,6 +33,42 @@ docker run --gpus all --ipc=host --ulimit memlock=-1 --ulimit stack=67108864  -p
 docker run --gpus all --ipc=host --ulimit memlock=-1 --ulimit stack=67108864  -it -v .:/workspace/NN  daniinxorchenabo/emotions-classify-env:lighting-cu122-latest python train.py train --config-file ./configs/config.json 
 ```
 
+### Run validate trained model
+
+```python
+import json
+from data_controller.load_data import load_data
+from train.lighting_model import LitModule
+from train.train_func import dataset_choice
+
+
+with open(CONFIG_FILENAME.json, "w") as f:
+    config = json.load(f)
+
+train, validation, dataset = load_data(
+        bath_size=config['learn_params']["batch_size"],
+        num_workers=config["load_dataset_workers_num"],
+        dataset_class=dataset_choice(config),
+        padding_sec=config['learn_params'].get('padding_sec', 0),
+        spectrogram_size=config['learn_params'].get('spectrogram_size', 0),
+    )
+
+model = LitModule.load_from_checkpoint(
+    CHECKPOINT_FILENAME.ckpt, 
+    emotions_count=len(dataset.emotions), 
+    states_count=len(dataset.states),
+    dataset=dataset,
+    config=config
+)
+model.eval()
+
+y_preds = [(model(i['array'].to('cuda:0')), i['emotion'], i['state']) for i in  validation]
+res_emotion_acc = [model.acc(i[0][0], i[1]) for i in y_preds]
+res_state_acc = [model.st_acc(i[0][1], i[2]) for i in y_preds]
+
+print(res_emotion_acc, res_state_acc)
+```
+
 ## Config format
 
 
