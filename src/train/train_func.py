@@ -1,3 +1,5 @@
+import json
+import os
 from datetime import datetime
 from os.path import join
 
@@ -105,4 +107,9 @@ def train_func(
     ) if tuning else dict(strategy='auto'))))
     if tuning and enable_tune_features:
         trainer = prepare_trainer(trainer)
+
+    os.makedirs(join(*config['saving_data_params']['saved_checkpoints_path']), exist_ok=True)
+    with open(join(*config['saving_data_params']['saved_checkpoints_path'], 'config.json'), 'w') as f:
+        print(json.dumps(config), file=f)
+
     return trainer.fit(model, train_dataloader, val_dataloader, ckpt_path=saved_checkpoint)  # , ckpt_path=path

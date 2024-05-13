@@ -43,6 +43,8 @@ class LitModule(L.LightningModule):
             # gamma: float = 2.0
     ):
         super().__init__()
+        if (config['type'] == 'train'):
+            self.save_hyperparameters()
         # self.model = SpectrogramCnnClassifier(
         #     num_classes,
         #     dataset=dataset,

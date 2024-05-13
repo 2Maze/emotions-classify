@@ -126,7 +126,7 @@ if __name__ == '__main__':
                 errors[e] = traceback.format_exc()
                 print(e),
                 print( traceback.format_exc())
-                raise e from e
+                # raise e from e
         print(*[f"{k}:::\n{v}" for k, v in errors.items()] ,sep='\n\n\n')
         with open( join(ROOT_DIR, "logs", 'errors', f'error_{datetime.now().strftime("%Y%m%d-%H%M%S")}.log'), 'w') as f:
             print(*[f"{k}:::\n{v}" for k, v in errors.items()], sep='\n\n\n', file=f)
